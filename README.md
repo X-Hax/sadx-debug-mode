@@ -8,6 +8,7 @@ Debug Mode is a mod for Sonic Adventure DX PC (2004) that displays various debug
 2) If you press the Z button (or the B key on the keyboard) while also holding the A button (or its keyboard counterpart), free movement mode will be enabled. To disable the free movement mode, press this button/key combination again.
 
 **Using the free movement mode**
+
 This is SADX' built-in debug mode (what's left of it). Collision objects are visible in this mode.
 When this mode is enabled, you can move the character freely through any obstacles. Use the analog stick to position the character on the X and Z plane. Hold the Y button to move the character up and down.
 
