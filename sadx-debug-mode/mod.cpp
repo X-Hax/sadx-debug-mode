@@ -39,7 +39,7 @@ void ScaleDebugFont(int scale)
 void PlayerDebug()
 {
 	ScaleDebugFont(16);
-	if (EntityData1Ptrs[0] == nullptr)
+	if (EntityData1Ptrs[0] == nullptr || CharObj2Ptrs[0] == nullptr)
 	{
 		DisplayDebugString(NJM_LOCATION(2, 1), "- PLAYER INFO UNAVAILABLE -");
 		return;
