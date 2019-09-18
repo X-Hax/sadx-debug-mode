@@ -150,12 +150,12 @@ void GameDebug()
 {
 	ScaleDebugFont(16);
 	SetDebugFontColor(0xFF88FFAA);
-	DrawDebugRectangle(1.75f, 0.75f, 20, 18);
-	DisplayDebugString(NJM_LOCATION(4, 1), "- GAME STATS -");
+	DrawDebugRectangle(1.75f, 0.75f, 22, 18);
+	DisplayDebugString(NJM_LOCATION(5, 1), "- GAME STATS -");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "FRAME   : %06d", FrameCounter);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "UNPAUSED: %06d", FrameCounterUnpaused);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "LEVEL   : %06d", LevelFrameCount);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "FRAME   : %08d", FrameCounter);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "UNPAUSED: %08d", FrameCounterUnpaused);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "LEVEL   : %08d", LevelFrameCount);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "GAME MODE : %02d", GameMode);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "GAME STATE: %02d", GameState);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "CHARACTER : %01d", CurrentCharacter);
