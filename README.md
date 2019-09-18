@@ -14,7 +14,7 @@ When this mode is enabled, you can move the character freely through any obstacl
 
 Notes:
 1) Free movement mode is unavailable for Gamma. 
-2) For Tails it will display collision objects but free movement will not be available.
+2) For Tails and Big it will display collision objects but free movement will not be available.
 
 **Related mods/tools**
 
