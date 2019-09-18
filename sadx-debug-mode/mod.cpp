@@ -5,7 +5,30 @@
 
 static char DebugSetting = 0;
 static int WaitFrames = 0;
-static bool DisableFontScaling = true;
+static bool EnableFontScaling = false;
+
+void DrawDebugRectangle(float leftchars, float topchars, float numchars_horz, float numchars_vert)
+{
+	float FontScale;
+	float HorizontalResolution_float = (float)HorizontalResolution;
+	float VerticalResolution_float = (float)VerticalResolution;
+	if (!EnableFontScaling) FontScale = 1.0f;
+	else
+	{
+		if (HorizontalResolution_float / VerticalResolution_float > 1.33f) FontScale = floor(VerticalResolution_float / 480.0f);
+		else FontScale = floor(HorizontalResolution_float / 640.0f);
+	}
+	njColorBlendingMode(0, NJD_COLOR_BLENDING_SRCALPHA);
+	njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_INVSRCALPHA);
+	if (DebugSetting == 6)
+	{
+		if (EnableFontScaling || HorizontalResolution < 1024) DrawRect_Queue(leftchars*FontScale*10.0f, topchars*FontScale*10.0f, numchars_horz*FontScale*10.0f, numchars_vert*FontScale*10.0f, 62041.496f, 0x7F0000FF, QueuedModelFlagsB_EnableZWrite);
+		else DrawRect_Queue(leftchars*FontScale*16.0f, topchars*FontScale*16.0f, numchars_horz*FontScale*16.0f, numchars_vert*FontScale*16.0f, 62041.496f, 0x7F0000FF, QueuedModelFlagsB_EnableZWrite); 
+	}
+	else DrawRect_Queue(leftchars*FontScale*16.0f, topchars*FontScale*16.0f, numchars_horz*FontScale*16.0f, numchars_vert*FontScale*16.0f, 62041.496f, 0x7F0000FF, QueuedModelFlagsB_EnableZWrite);
+	njColorBlendingMode(0, NJD_COLOR_BLENDING_SRCALPHA);
+	njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_INVSRCALPHA);
+}
 
 void DrawDebugText_NoFiltering(NJS_QUAD_TEXTURE_EX *quad)
 {
@@ -27,7 +50,7 @@ void ScaleDebugFont(int scale)
 	float FontScale;
 	float HorizontalResolution_float = (float)HorizontalResolution;
 	float VerticalResolution_float = (float)VerticalResolution;
-	if (DisableFontScaling) FontScale = 1.0f;
+	if (!EnableFontScaling) FontScale = 1.0f;
 	else
 	{
 		if (HorizontalResolution_float / VerticalResolution_float > 1.33f) FontScale = floor(VerticalResolution_float / 480.0f);
@@ -41,25 +64,29 @@ void PlayerDebug()
 	ScaleDebugFont(16);
 	if (EntityData1Ptrs[0] == nullptr || CharObj2Ptrs[0] == nullptr)
 	{
+		SetDebugFontColor(0xFFFF0000);
 		DisplayDebugString(NJM_LOCATION(2, 1), "- PLAYER INFO UNAVAILABLE -");
 		return;
 	}
+	DrawDebugRectangle(1.75f, 0.75f, 25, 23);
+	SetDebugFontColor(0xFF88FFAA);
+	DisplayDebugString(NJM_LOCATION(6, 1), "- PLAYER INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugString(NJM_LOCATION(2, 1), "- PLAYER INFO -");
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "X: %f", EntityData1Ptrs[0]->Position.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "Y: %f", EntityData1Ptrs[0]->Position.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "Z: %f", EntityData1Ptrs[0]->Position.z);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %d", EntityData1Ptrs[0]->Rotation.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %d", EntityData1Ptrs[0]->Rotation.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %d", EntityData1Ptrs[0]->Rotation.z);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 11), "ACTION: %d", EntityData1Ptrs[0]->Action);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "ANIM: %d", CharObj2Ptrs[0]->AnimationThing.Index);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "FRAME: %f", CharObj2Ptrs[0]->AnimationThing.Frame);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "SPEED X: %f", CharObj2Ptrs[0]->Speed.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "SPEED Y: %f", CharObj2Ptrs[0]->Speed.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 17), "SPEED Z: %f", CharObj2Ptrs[0]->Speed.z);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "X: %06d.%04d", (int)EntityData1Ptrs[0]->Position.x, abs(int(EntityData1Ptrs[0]->Position.x*100)));
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "Y: %06d.%04d", (int)EntityData1Ptrs[0]->Position.y, abs(int(EntityData1Ptrs[0]->Position.z*100)));
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "Z: %06d.%04d", (int)EntityData1Ptrs[0]->Position.z, abs(int(EntityData1Ptrs[0]->Position.z*100)));
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.x, (360.0f / 65535.0f) *(Uint16)EntityData1Ptrs[0]->Rotation.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.y, (360.0f / 65535.0f) *(Uint16)EntityData1Ptrs[0]->Rotation.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.z, (360.0f / 65535.0f) *(Uint16)EntityData1Ptrs[0]->Rotation.z);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 11), "ACTION: %03d", EntityData1Ptrs[0]->Action);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "ANIM: %03d", CharObj2Ptrs[0]->AnimationThing.Index);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "FRAME: %.2f", CharObj2Ptrs[0]->AnimationThing.Frame);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "SPEED X: %.4f", CharObj2Ptrs[0]->Speed.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "SPEED Y: %.4f", CharObj2Ptrs[0]->Speed.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 17), "SPEED Z: %.4f", CharObj2Ptrs[0]->Speed.z);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "RINGS: %03d", Rings);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "IDLE: %d", CharObj2Ptrs[0]->IdleTime);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "LIVES: %03d", Lives);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "IDLE: %04d", CharObj2Ptrs[0]->IdleTime);
 }
 
 void CameraDebug()
@@ -67,20 +94,23 @@ void CameraDebug()
 	ScaleDebugFont(16);
 	if (Camera_Data1 == nullptr)
 	{
+		SetDebugFontColor(0xFFFF0000);
 		DisplayDebugString(NJM_LOCATION(2, 1), "- CAMERA INFO UNAVAILABLE -");
 		return;
 	}
+	SetDebugFontColor(0xFF88FFAA);
+	DrawDebugRectangle(1.75f, 0.75f, 23, 18);
+	DisplayDebugString(NJM_LOCATION(5, 1), "- CAMERA INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugString(NJM_LOCATION(2, 1), "- CAMERA INFO -");
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "X: %f", Camera_Data1->Position.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "Y: %f", Camera_Data1->Position.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "Z: %f", Camera_Data1->Position.z);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %d", Camera_Data1->Rotation.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %d", Camera_Data1->Rotation.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %d", Camera_Data1->Rotation.z);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "FOV: %d", HorizontalFOV_BAMS);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "ACTION: %d", Camera_Data1->Action);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "FRAME: %f", Camera_CurrentActionFrame);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "X: %06d.%04d", (int)Camera_Data1->Position.x, abs(int(Camera_Data1->Position.x*100)));
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "Y: %06d.%04d", (int)Camera_Data1->Position.y, abs(int(Camera_Data1->Position.z*100)));
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "Z: %06d.%04d", (int)Camera_Data1->Position.z, abs(int(Camera_Data1->Position.z*100)));
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.x, (360.0f / 65535.0f) *(Uint16)Camera_Data1->Rotation.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.y, (360.0f / 65535.0f) *(Uint16)Camera_Data1->Rotation.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.z, (360.0f / 65535.0f) *(Uint16)Camera_Data1->Rotation.z);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "HZFOV: %06d / %03.0f", (Uint16)HorizontalFOV_BAMS, (360.0f / 65535.0f) *(Uint16)HorizontalFOV_BAMS);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "ACTION: %02d", Camera_Data1->Action);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "FRAME: %.2f", Camera_CurrentActionFrame);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "MODE: %d", CameraType[3]);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "FLAGS: %X", camera_flags);	
 }
@@ -89,88 +119,137 @@ void FogDebug()
 {
 	NJS_COLOR FogColor;
 	FogColor.color = LevelFogData.Color;
+	DrawDebugRectangle(1.75f, 0.75f, 31, 23);
 	ScaleDebugFont(16);
+	SetDebugFontColor(0xFF88FFAA);
+	DisplayDebugString(NJM_LOCATION(10, 1), "- FOG INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugString(NJM_LOCATION(2, 1), "- FOG INFO -");
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "ENABLED: %d", LevelFogData.Toggle);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "DIST MIN: %f", LevelFogData.Layer);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "DIST MAX: %f", LevelFogData.Distance);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 6), "COLOR: R%d G%d B%d A%d", FogColor.argb.r, FogColor.argb.g, FogColor.argb.b, FogColor.argb.a);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "ENABLED: %01d", LevelFogData.Toggle);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "DIST MIN: %.4f", LevelFogData.Layer);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "DIST MAX: %.4f", LevelFogData.Distance);
 	SetDebugFontColor(LevelFogData.Color);
-	DisplayDebugStringFormatted(NJM_LOCATION(30, 6), "COLOR");
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 6), "COLOR");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugString(NJM_LOCATION(2, 9), "- SKYBOX INFO -");
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 11), "SCALE X: %f", Skybox_Scale.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "SCALE Y: %f", Skybox_Scale.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "SCALE Z: %f", Skybox_Scale.z);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "DIST MIN: %f", SkyboxDrawDistance.Minimum);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "DIST MAX: %f", SkyboxDrawDistance.Maximum);
-	DisplayDebugString(NJM_LOCATION(2, 19), "- DRAW DISTANCE INFO -");
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "DIST MIN: %f", LevelDrawDistance.Minimum);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 22), "DIST MAX: %f", LevelDrawDistance.Maximum);
+	DisplayDebugStringFormatted(NJM_LOCATION(9, 6), ": R%03d G%03d B%03d A%03d", FogColor.argb.r, FogColor.argb.g, FogColor.argb.b, FogColor.argb.a);
+	SetDebugFontColor(0xFF88FFAA);
+	DisplayDebugString(NJM_LOCATION(8, 9), "- SKY BOX INFO -");
+	SetDebugFontColor(0xFFBFBFBF);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 11), "SCALE X: %.4f", Skybox_Scale.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "SCALE Y: %.4f", Skybox_Scale.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "SCALE Z: %.4f", Skybox_Scale.z);
+	SetDebugFontColor(0xFF88FFAA);
+	DisplayDebugString(NJM_LOCATION(7, 16), "- DRAW DIST INFO -");
+	SetDebugFontColor(0xFFBFBFBF);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 18), "SKY MIN: %.4f", SkyboxDrawDistance.Minimum);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "SKY MAX: %.4f", SkyboxDrawDistance.Maximum);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "LEVEL MIN: %.4f", LevelDrawDistance.Minimum);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "LEVEL MAX: %.4f", LevelDrawDistance.Maximum);
 }
 
 void GameDebug()
 {
 	ScaleDebugFont(16);
+	SetDebugFontColor(0xFF88FFAA);
+	DrawDebugRectangle(1.75f, 0.75f, 20, 18);
+	DisplayDebugString(NJM_LOCATION(4, 1), "- GAME STATS -");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugString(NJM_LOCATION(2, 1), "- GAME INFO -");
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "FRAME: %d", FrameCounter);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "UNPAUSED: %d", FrameCounterUnpaused);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "LEVEL: %d", LevelFrameCount);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "GAME MODE: %d", GameMode);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "GAME STATE: %d", GameState);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "CHARACTER: %d", CurrentCharacter);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "CHAR SEL: %d", CurrentCharacterSelection);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 11), "LEVEL: %d", CurrentLevel);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "ACT: %d", CurrentAct);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "CHAO STAGE: %d", CurrentChaoStage);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "CUTSCENE ID: %d", CutsceneID);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "FRAME   : %06d", FrameCounter);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "UNPAUSED: %06d", FrameCounterUnpaused);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "LEVEL   : %06d", LevelFrameCount);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "GAME MODE : %02d", GameMode);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "GAME STATE: %02d", GameState);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "CHARACTER : %01d", CurrentCharacter);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 11), "CHAR SEL  : %01d", CurrentCharacterSelection);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "LEVEL: %02d", CurrentLevel);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "ACT: %01d", CurrentAct);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "CHAO STAGE: %02d", CurrentChaoStage);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "CUTSCENE ID: %03d", CutsceneID);
 }
 
 void UpdateKeys()
 {
-	int CursorPos = 18;
+	int CursorPos = 14;
 	for (int i = 0; i < 256; i++)
 	{
 		if (KeyboardKeys[i].held)
 		{
-			DisplayDebugStringFormatted(NJM_LOCATION(CursorPos, 24), "%d", i);
-			CursorPos += 4;
+			DisplayDebugStringFormatted(NJM_LOCATION(CursorPos, 19), "%d ", i);
+			CursorPos += 3;
 		}
 	}
+}
+
+void UpdateButtons()
+{
+	std::string ButtonsString = "";
+	int CursorPos = 17;
+	if (ControllerPointers[0]->HeldButtons & Buttons_A)
+	{
+		ButtonsString += "A ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_B)
+	{
+		ButtonsString += "B ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_C)
+	{
+		ButtonsString += "C ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_D)
+	{
+		ButtonsString += "D ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_X)
+	{
+		ButtonsString += "X ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_Y)
+	{
+		ButtonsString += "Y ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_Z)
+	{
+		ButtonsString += "Z ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_Start)
+	{
+		ButtonsString += "START ";
+	}
+	DisplayDebugStringFormatted(NJM_LOCATION(CursorPos, 12), ButtonsString.c_str());
 }
 
 void InputDebug()
 {
 	ScaleDebugFont(16);
+	DrawDebugRectangle(1.75f, 0.75f, 29, 21);
+	SetDebugFontColor(0xFF88FFAA);
+	DisplayDebugString(NJM_LOCATION(6, 1), "- CONTROLLER INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugString(NJM_LOCATION(2, 1), "- CONTROLLER INFO -");
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "ANALOG X: %d", ControllerPointers[0]->LeftStickX);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "ANALOG Y: %d", ControllerPointers[0]->LeftStickY);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 6), "TRIGGER L: %d", ControllerPointers[0]->LTriggerPressure);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "TRIGGER R: %d", ControllerPointers[0]->RTriggerPressure);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "BUTTON A: %d", ControllerPointers[0]->HeldButtons & Buttons_A);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "BUTTON B: %d", ControllerPointers[0]->HeldButtons & Buttons_B);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 11), "BUTTON X: %d", ControllerPointers[0]->HeldButtons & Buttons_X);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "BUTTON Y: %d", ControllerPointers[0]->HeldButtons & Buttons_Y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "BUTTON Z: %d", ControllerPointers[0]->HeldButtons & Buttons_Z);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "BUTTON C: %d", ControllerPointers[0]->HeldButtons & Buttons_C);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "BUTTON D: %d", ControllerPointers[0]->HeldButtons & Buttons_D);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 18), "ANALOG2 X: %d", ControllerPointers[0]->RightStickX);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "ANALOG2 Y: %d", ControllerPointers[0]->RightStickY);
-	DisplayDebugString(NJM_LOCATION(2, 22), "- KEYBOARD INFO -");
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 24), "PRESSED KEYS:");
-
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "ANALOG1 X: %04d", ControllerPointers[0]->LeftStickX);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "ANALOG1 Y: %04d", ControllerPointers[0]->LeftStickY);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 6), "ANALOG2 X: %04d", ControllerPointers[0]->RightStickX);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANALOG2 Y: %04d", ControllerPointers[0]->RightStickY);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "TRIGGER L: %03d", ControllerPointers[0]->LTriggerPressure);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "TRIGGER R: %03d", ControllerPointers[0]->RTriggerPressure);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "BUTTONS HELD:");
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "BUTTONS RAW: %08X", ControllerPointers[0]->HeldButtons);
+	SetDebugFontColor(0xFF88FFAA);
+	DisplayDebugString(NJM_LOCATION(7, 17), "- KEYBOARD INFO -");
+	SetDebugFontColor(0xFFBFBFBF);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "KEYS HELD:");
 }
 
 void SoundDebug()
 {
+	DrawDebugRectangle(0.25f, 0.75f, 63, 44);
 	ScaleDebugFont(16);
-	DisplayDebugString(NJM_LOCATION(2, 1), "- SOUND INFO -");
-	if (DisableFontScaling && HorizontalResolution >= 1024) ScaleDebugFont(16); else ScaleDebugFont(10);
-	SetDebugFontColor(0xFFBFBFBF);
+	SetDebugFontColor(0xFF88FFAA);
+	if (EnableFontScaling || HorizontalResolution < 1024) DisplayDebugString(NJM_LOCATION(12, 1), "- SOUND QUEUE -");
+	else DisplayDebugString(NJM_LOCATION(24, 1), "- SOUND QUEUE -");
+	if (!EnableFontScaling && HorizontalResolution >= 1024) ScaleDebugFont(16); else ScaleDebugFont(10);
+	SetDebugFontColor(0xFFBFFF00);
 	DisplayDebugString(NJM_LOCATION(2, 4), "N   ID  INDEX   LENGTH  FLAG   VOLUME    PAN     3D    PITCH");
+	SetDebugFontColor(0xFFBFBFBF);
 	int ActiveSounds = 0;
 	for (unsigned int i = 0; i < 35; i++)
 	{
@@ -203,7 +282,7 @@ extern "C"
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions &helperFunctions)
 	{
 		const IniFile *config = new IniFile(std::string(path) + "\\config.ini");
-		DisableFontScaling = config->getBool("General", "DisableFontScaling", true);
+		EnableFontScaling = config->getBool("General", "EnableFontScaling", false);
 		if (GetModuleHandle(L"DLCs_Main") == nullptr) WriteCall((void*)0x77E9E4, DrawDebugText_NoFiltering);
 		delete config;
 	}
@@ -225,7 +304,11 @@ extern "C"
 			else DebugMode = 1;
 			WaitFrames = 5;
 		}		
-		if (DebugSetting == 4) UpdateKeys();
+		if (DebugSetting == 4)
+		{
+			UpdateKeys();
+			UpdateButtons();
+		}
 	}
 	__declspec(dllexport) void __cdecl OnFrame()
 	{
