@@ -318,7 +318,7 @@ extern "C"
 			{
 				DebugMode = 0;
 				DeathPlanesEnabled = -1;
-				EntityData1Ptrs[0]->Action = 1;
+				if (EntityData1Ptrs[0] != nullptr) EntityData1Ptrs[0]->Action = 1;
 			}
 			else if (CurrentCharacter != Characters_Gamma)
 			{
@@ -345,7 +345,7 @@ extern "C"
 		{
 			DeathPlanesEnabled = -1;
 			DebugMode = 0;
-			EntityData1Ptrs[0]->Action = 1;
+			if (EntityData1Ptrs[0] != nullptr) EntityData1Ptrs[0]->Action = 1;
 		}
 	}
 	__declspec(dllexport) ModInfo SADXModInfo = { ModLoaderVer };
