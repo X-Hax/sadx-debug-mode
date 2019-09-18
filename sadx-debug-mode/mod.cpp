@@ -320,7 +320,7 @@ extern "C"
 				DeathPlanesEnabled = -1;
 				if (EntityData1Ptrs[0] != nullptr) EntityData1Ptrs[0]->Action = 1;
 			}
-			else if (CurrentCharacter != Characters_Gamma)
+			else if (CurrentCharacter != Characters_Gamma && GameMode != GameModes_Menu)
 			{
 				DebugMode = 1;
 				DeathPlanesEnabled = 1;
