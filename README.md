@@ -1,6 +1,6 @@
 # SADX Debug Mode by PkR
 
-Debug Mode is a mod for Sonic Adventure DX PC (2004) that displays various debug information on screen. You need SADX Mod Loader to use this mod. For better legibility enable the "Disable HUD" code in SADX Mod Manager before running the game with this mod.
+Debug Mode is a mod for Sonic Adventure DX PC (2004) that displays various debug information on screen. You need SADX Mod Loader to use this mod. For better legibility enable the "Hide HUD" code in SADX Mod Manager before running the game with this mod.
 
 **Using the mod**
 
