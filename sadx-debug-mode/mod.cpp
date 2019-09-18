@@ -4,7 +4,7 @@
 #include "Data.h"
 
 static char DebugSetting = 0;
-static int WaitFrames = 0;
+static int WaitFrames = -1;
 static bool EnableFontScaling = false;
 
 void DrawDebugRectangle(float leftchars, float topchars, float numchars_horz, float numchars_vert)
@@ -288,21 +288,29 @@ extern "C"
 	}
 	__declspec(dllexport) void __cdecl OnInput()
 	{
-		if (WaitFrames > 0) WaitFrames--;
+		if (WaitFrames > 0)
+		{
+			WaitFrames--;
+		}
+		else if (WaitFrames == 0)
+		{
+			ControllerPointers[0]->PressedButtons |= Buttons_A;
+			ControllerPointers[0]->HeldButtons |= Buttons_A;
+			WaitFrames = -1;
+		}
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && !(ControllerPointers[0]->HeldButtons & Buttons_A))
 		{
 			DebugSetting++;
 			if (DebugSetting > 6) DebugSetting = 0;
 		}
-		if (WaitFrames <= 0 && (ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && ControllerPointers[0]->HeldButtons & Buttons_A)
+		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && ControllerPointers[0]->HeldButtons & Buttons_A)
 		{
 			if (DebugMode)
 			{
 				DebugMode = 0;
-				ControllerPointers[0]->PressedButtons |= Buttons_A;
+				WaitFrames = 5;
 			}
-			else DebugMode = 1;
-			WaitFrames = 5;
+			else if (CurrentCharacter != Characters_Gamma) DebugMode = 1;
 		}		
 		if (DebugSetting == 4)
 		{
