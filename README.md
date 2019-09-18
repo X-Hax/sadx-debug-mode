@@ -11,6 +11,9 @@ Debug Mode is a mod for Sonic Adventure DX PC (2004) that displays various debug
 
 This is SADX' built-in debug mode (what's left of it). Collision objects are visible in this mode.
 When this mode is enabled, you can move the character freely through any obstacles. Use the analog stick to position the character on the X and Z plane. Hold the Y button to move the character up and down.
+Notes: 
+1) Free movement mode is unavailable for Gamma. 
+2) For Tails it will display collision objects but free movement will not be available.
 
 **Related mods/tools**
 
