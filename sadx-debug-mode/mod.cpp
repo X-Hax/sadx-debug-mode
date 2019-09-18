@@ -4,8 +4,8 @@
 #include "Data.h"
 
 static char DebugSetting = 0;
-static int WaitFrames = -1;
 static bool EnableFontScaling = false;
+signed char DeathPlanesEnabled = -1;
 
 void DrawDebugRectangle(float leftchars, float topchars, float numchars_horz, float numchars_vert)
 {
@@ -277,10 +277,29 @@ void SoundDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(2, 42), "ACTIVE SOUNDS: %d", ActiveSounds);
 }
 
+void RenderDeathPlanes(NJS_OBJECT *object)
+{
+	SetTextureToCommon();
+	njPushMatrix(0);
+	njControl3D_Backup();
+	njControl3D_Add(NJD_CONTROL_3D_CONSTANT_MATERIAL | NJD_CONTROL_3D_ENABLE_ALPHA | NJD_CONTROL_3D_CONSTANT_ATTR);
+	BackupConstantAttr();
+	AddConstantAttr(0, NJD_FLAG_USE_ALPHA);
+	SetMaterialAndSpriteColor_Float(0.5f, 1.0f, 0, 0);
+	DrawQueueDepthBias = 47952.0f;
+	ProcessModelNode(object, (QueuedModelFlagsB)4, 1.0f);
+	njPopMatrix(1u);
+	DrawQueueDepthBias = 0.0f;
+	RestoreConstantAttr();
+	njControl3D_Restore();
+}
+
 extern "C"
 {
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions &helperFunctions)
 	{
+		WriteCall((void*)0x44AF3B, RenderDeathPlanes);
+		WriteData((signed char**)0x44AF32, &DeathPlanesEnabled);
 		const IniFile *config = new IniFile(std::string(path) + "\\config.ini");
 		EnableFontScaling = config->getBool("General", "EnableFontScaling", false);
 		if (GetModuleHandle(L"DLCs_Main") == nullptr) WriteCall((void*)0x77E9E4, DrawDebugText_NoFiltering);
@@ -288,16 +307,6 @@ extern "C"
 	}
 	__declspec(dllexport) void __cdecl OnInput()
 	{
-		if (WaitFrames > 0)
-		{
-			WaitFrames--;
-		}
-		else if (WaitFrames == 0)
-		{
-			ControllerPointers[0]->PressedButtons |= Buttons_A;
-			ControllerPointers[0]->HeldButtons |= Buttons_A;
-			WaitFrames = -1;
-		}
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && !(ControllerPointers[0]->HeldButtons & Buttons_A))
 		{
 			DebugSetting++;
@@ -308,9 +317,14 @@ extern "C"
 			if (DebugMode)
 			{
 				DebugMode = 0;
-				WaitFrames = 5;
+				DeathPlanesEnabled = -1;
+				EntityData1Ptrs[0]->Action = 1;
 			}
-			else if (CurrentCharacter != Characters_Gamma) DebugMode = 1;
+			else if (CurrentCharacter != Characters_Gamma)
+			{
+				DebugMode = 1;
+				DeathPlanesEnabled = 1;
+			}
 		}		
 		if (DebugSetting == 4)
 		{
@@ -327,6 +341,12 @@ extern "C"
 		if (DebugSetting == 4) InputDebug();
 		if (DebugSetting == 5) FogDebug();
 		if (DebugSetting == 6) SoundDebug();
+		if (DebugMode && (GameState == 7 || GameState == 3 || GameState == 4))
+		{
+			DeathPlanesEnabled = -1;
+			DebugMode = 0;
+			EntityData1Ptrs[0]->Action = 1;
+		}
 	}
 	__declspec(dllexport) ModInfo SADXModInfo = { ModLoaderVer };
 }
