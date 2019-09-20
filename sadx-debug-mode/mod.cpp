@@ -10,13 +10,11 @@ signed char DeathPlanesEnabled = -1;
 void DrawDebugRectangle(float leftchars, float topchars, float numchars_horz, float numchars_vert)
 {
 	float FontScale;
-	float HorizontalResolution_float = (float)HorizontalResolution;
-	float VerticalResolution_float = (float)VerticalResolution;
 	if (!EnableFontScaling) FontScale = 1.0f;
 	else
 	{
-		if (HorizontalResolution_float / VerticalResolution_float > 1.33f) FontScale = floor(VerticalResolution_float / 480.0f);
-		else FontScale = floor(HorizontalResolution_float / 640.0f);
+		if ((float)HorizontalResolution / (float)VerticalResolution > 1.33f) FontScale = floor((float)VerticalResolution / 480.0f);
+		else FontScale = floor((float)HorizontalResolution / 640.0f);
 	}
 	njColorBlendingMode(0, NJD_COLOR_BLENDING_SRCALPHA);
 	njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_INVSRCALPHA);
@@ -45,16 +43,83 @@ void DrawDebugText_NoFiltering(NJS_QUAD_TEXTURE_EX *quad)
 	WriteData((uint8_t*)0x0078B7EC, Backup3);
 }
 
+void RenderDeathPlanes(NJS_OBJECT* object)
+{
+	SetTextureToCommon();
+	njPushMatrix(0);
+	njControl3D_Backup();
+	njControl3D_Add(NJD_CONTROL_3D_CONSTANT_MATERIAL | NJD_CONTROL_3D_ENABLE_ALPHA | NJD_CONTROL_3D_CONSTANT_ATTR);
+	BackupConstantAttr();
+	AddConstantAttr(0, NJD_FLAG_USE_ALPHA);
+	SetMaterialAndSpriteColor_Float(0.5f, 1.0f, 0, 0);
+	DrawQueueDepthBias = 47952.0f;
+	ProcessModelNode(object, (QueuedModelFlagsB)4, 1.0f);
+	njPopMatrix(1u);
+	DrawQueueDepthBias = 0.0f;
+	RestoreConstantAttr();
+	njControl3D_Restore();
+}
+
+void UpdateKeys()
+{
+	int CursorPos = 14;
+	for (int i = 0; i < 256; i++)
+	{
+		if (KeyboardKeys[i].held)
+		{
+			DisplayDebugStringFormatted(NJM_LOCATION(CursorPos, 19), "%d ", i);
+			CursorPos += 3;
+		}
+	}
+}
+
+void UpdateButtons()
+{
+	std::string ButtonsString = "";
+	int CursorPos = 17;
+	if (ControllerPointers[0]->HeldButtons & Buttons_A)
+	{
+		ButtonsString += "A ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_B)
+	{
+		ButtonsString += "B ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_C)
+	{
+		ButtonsString += "C ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_D)
+	{
+		ButtonsString += "D ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_X)
+	{
+		ButtonsString += "X ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_Y)
+	{
+		ButtonsString += "Y ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_Z)
+	{
+		ButtonsString += "Z ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_Start)
+	{
+		ButtonsString += "START ";
+	}
+	DisplayDebugStringFormatted(NJM_LOCATION(CursorPos, 12), ButtonsString.c_str());
+}
+
 void ScaleDebugFont(int scale)
 {
 	float FontScale;
-	float HorizontalResolution_float = (float)HorizontalResolution;
-	float VerticalResolution_float = (float)VerticalResolution;
 	if (!EnableFontScaling) FontScale = 1.0f;
 	else
 	{
-		if (HorizontalResolution_float / VerticalResolution_float > 1.33f) FontScale = floor(VerticalResolution_float / 480.0f);
-		else FontScale = floor(HorizontalResolution_float / 640.0f);
+		if ((float)HorizontalResolution / (float)VerticalResolution > 1.33f) FontScale = floor((float)VerticalResolution / 480.0f);
+		else FontScale = floor((float)HorizontalResolution / 640.0f);
 	}
 	SetDebugFontSize(FontScale*scale);
 }
@@ -72,9 +137,9 @@ void PlayerDebug()
 	SetDebugFontColor(0xFF88FFAA);
 	DisplayDebugString(NJM_LOCATION(6, 1), "- PLAYER INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "X: %06d.%04d", (int)EntityData1Ptrs[0]->Position.x, abs(int(EntityData1Ptrs[0]->Position.x*100)));
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "Y: %06d.%04d", (int)EntityData1Ptrs[0]->Position.y, abs(int(EntityData1Ptrs[0]->Position.z*100)));
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "Z: %06d.%04d", (int)EntityData1Ptrs[0]->Position.z, abs(int(EntityData1Ptrs[0]->Position.z*100)));
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "X: %.2f", EntityData1Ptrs[0]->Position.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "Y: %.2f", EntityData1Ptrs[0]->Position.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "Z: %.2f", EntityData1Ptrs[0]->Position.z);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.x, (360.0f / 65535.0f) *(Uint16)EntityData1Ptrs[0]->Rotation.x);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.y, (360.0f / 65535.0f) *(Uint16)EntityData1Ptrs[0]->Rotation.y);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.z, (360.0f / 65535.0f) *(Uint16)EntityData1Ptrs[0]->Rotation.z);
@@ -102,9 +167,9 @@ void CameraDebug()
 	DrawDebugRectangle(1.75f, 0.75f, 23, 18);
 	DisplayDebugString(NJM_LOCATION(5, 1), "- CAMERA INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "X: %06d.%04d", (int)Camera_Data1->Position.x, abs(int(Camera_Data1->Position.x*100)));
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "Y: %06d.%04d", (int)Camera_Data1->Position.y, abs(int(Camera_Data1->Position.z*100)));
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "Z: %06d.%04d", (int)Camera_Data1->Position.z, abs(int(Camera_Data1->Position.z*100)));
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "X: %.2f", Camera_Data1->Position.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "Y: %.2f", Camera_Data1->Position.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "Z: %.2f", Camera_Data1->Position.z);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.x, (360.0f / 65535.0f) *(Uint16)Camera_Data1->Rotation.x);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.y, (360.0f / 65535.0f) *(Uint16)Camera_Data1->Rotation.y);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.z, (360.0f / 65535.0f) *(Uint16)Camera_Data1->Rotation.z);
@@ -166,58 +231,6 @@ void GameDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "CUTSCENE ID: %03d", CutsceneID);
 }
 
-void UpdateKeys()
-{
-	int CursorPos = 14;
-	for (int i = 0; i < 256; i++)
-	{
-		if (KeyboardKeys[i].held)
-		{
-			DisplayDebugStringFormatted(NJM_LOCATION(CursorPos, 19), "%d ", i);
-			CursorPos += 3;
-		}
-	}
-}
-
-void UpdateButtons()
-{
-	std::string ButtonsString = "";
-	int CursorPos = 17;
-	if (ControllerPointers[0]->HeldButtons & Buttons_A)
-	{
-		ButtonsString += "A ";
-	}
-	if (ControllerPointers[0]->HeldButtons & Buttons_B)
-	{
-		ButtonsString += "B ";
-	}
-	if (ControllerPointers[0]->HeldButtons & Buttons_C)
-	{
-		ButtonsString += "C ";
-	}
-	if (ControllerPointers[0]->HeldButtons & Buttons_D)
-	{
-		ButtonsString += "D ";
-	}
-	if (ControllerPointers[0]->HeldButtons & Buttons_X)
-	{
-		ButtonsString += "X ";
-	}
-	if (ControllerPointers[0]->HeldButtons & Buttons_Y)
-	{
-		ButtonsString += "Y ";
-	}
-	if (ControllerPointers[0]->HeldButtons & Buttons_Z)
-	{
-		ButtonsString += "Z ";
-	}
-	if (ControllerPointers[0]->HeldButtons & Buttons_Start)
-	{
-		ButtonsString += "START ";
-	}
-	DisplayDebugStringFormatted(NJM_LOCATION(CursorPos, 12), ButtonsString.c_str());
-}
-
 void InputDebug()
 {
 	ScaleDebugFont(16);
@@ -239,9 +252,153 @@ void InputDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "KEYS HELD:");
 }
 
+NJS_POINT2COL Pause_Point2Col;
+NJS_POINT2 Pause_Points[4];
+NJS_COLOR Pause_Colors[4];
+
+void DrawAss(NJS_COLOR color1, NJS_COLOR color2, float C1_POW, float C2_POW, float YPos)
+{
+	NJS_POINT2COL ColorGradient_Point2Col;
+	NJS_POINT2 ColorGradient_Points[4];
+	NJS_COLOR ColorGradient_Colors[] = { {0xFFFF00FF}, {0xFFFF00FF}, {0x00000000}, {0x00000000} };
+	for (int i = 0; i < 256; i++)
+	{
+		//ColorR( "Generate_CO1" ) * ( 1 - ( LoopIndex("co1") ) / 256.0 ) pow COPow( "Generate_CO1" )
+		//ColorR( "Generate_CO2" ) * ( 1 - ( LoopIndex("co2") ) / 256.0 ) pow COPow( "Generate_CO2" )
+		ColorGradient_Colors[0].argb.a = 255;
+		ColorGradient_Colors[0].argb.r = min(255, (color1.argb.r * pow(1.0f - i / 256.0f, C1_POW) + color2.argb.r * pow(1.0f - i / 256.0f, C2_POW)));
+		ColorGradient_Colors[0].argb.g = min(255, (color1.argb.g * pow(1.0f - i / 256.0f, C1_POW) + color2.argb.g * pow(1.0f - i / 256.0f, C2_POW)));
+		ColorGradient_Colors[0].argb.b = min(255, (color1.argb.b * pow(1.0f - i / 256.0f, C1_POW) + color2.argb.b * pow(1.0f - i / 256.0f, C2_POW)));
+		ColorGradient_Colors[1].color = ColorGradient_Colors[0].color;
+		ColorGradient_Colors[2].color = 0xFF000000;
+		ColorGradient_Colors[3].color = 0xFF000000;
+		ColorGradient_Point2Col.tex = 0;
+		ColorGradient_Points[0].x = 32+i;
+		ColorGradient_Points[0].y = YPos - 128;
+		ColorGradient_Points[1].x = 32+i;
+		ColorGradient_Points[1].y = YPos - 96;
+		ColorGradient_Points[2].x = 33+i;
+		ColorGradient_Points[2].y = YPos - 128;
+		ColorGradient_Points[3].x = 33+i;
+		ColorGradient_Points[3].y = YPos - 96;
+		ColorGradient_Point2Col.p = (NJS_POINT2*)&ColorGradient_Points;
+		ColorGradient_Point2Col.col = (NJS_COLOR*)&ColorGradient_Colors;
+		Draw2DLinesMaybe_Queue((NJS_POINT2COL*)&ColorGradient_Point2Col, 4, 34000.0f, NJD_TRANSPARENT, QueuedModelFlagsB_SomeTextureThing);
+	}
+}
+
+void LSPaletteDebug()
+{
+	NJS_COLOR AmbColor;
+	NJS_COLOR CO1Color;
+	NJS_COLOR CO2Color;
+	NJS_COLOR SP1Color;
+	NJS_COLOR SP2Color;
+	AmbColor.argb.a = 255;
+	AmbColor.argb.r = int(255.0f * LSPalette.AMB_R);
+	AmbColor.argb.g = int(255.0f * LSPalette.AMB_G);
+	AmbColor.argb.b = int(255.0f * LSPalette.AMB_B);
+	ScaleDebugFont(16);
+	DrawDebugRectangle(1.75f, 0.75f, 29, 29);
+	SetDebugFontColor(0xFF88FFAA);
+	DisplayDebugString(NJM_LOCATION(6, 1), "- LS PALETTE INFO -");
+	SetDebugFontColor(0xFFBFBFBF);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "TYPE: %X", LSPalette.Type);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "FLAGS: %X", LSPalette.Flags);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 6), "DIR X: %.3f", LSPalette.Direction.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "DIR Y: %.3f", LSPalette.Direction.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "DIR Z: %.3f", LSPalette.Direction.z);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "DIFFUSE: %.3f", LSPalette.DIF);
+	SetDebugFontColor(AmbColor.color);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "AMBIENT");
+	SetDebugFontColor(0xFFBFBFBF);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "R: %.3f", LSPalette.AMB_R);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "G: %.3f", LSPalette.AMB_G);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "B: %.3f", LSPalette.AMB_B);
+	//CO1
+	CO1Color.argb.a = 255;
+	CO1Color.argb.r = int(255.0f * LSPalette.CO_R);
+	CO1Color.argb.g = int(255.0f * LSPalette.CO_G);
+	CO1Color.argb.b = int(255.0f * LSPalette.CO_B);
+	SetDebugFontColor(CO1Color.color);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 17), "COLOR1");
+	SetDebugFontColor(0xFFBFBFBF);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 18), "R  : %.3f", LSPalette.CO_R);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "G  : %.3f", LSPalette.CO_G);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "B  : %.3f", LSPalette.CO_B);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "POW: %.3f", LSPalette.CO_pow);
+	//SP1
+	SP1Color.argb.a = 255;
+	SP1Color.argb.r = int(255.0f * LSPalette.SP_R);
+	SP1Color.argb.g = int(255.0f * LSPalette.SP_G);
+	SP1Color.argb.b = int(255.0f * LSPalette.SP_B);
+	SetDebugFontColor(SP1Color.color);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 17), "SPECULAR1");
+	SetDebugFontColor(0xFFBFBFBF);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 18), "R  : %.3f", LSPalette.SP_R);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 19), "G  : %.3f", LSPalette.SP_G);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 20), "B  : %.3f", LSPalette.SP_B);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 21), "POW: %.3f", LSPalette.SP_pow);
+	//CO2
+	CO2Color.argb.a = 255;
+	CO2Color.argb.r = int(255.0f * LSPalette.CO2_R);
+	CO2Color.argb.g = int(255.0f * LSPalette.CO2_G);
+	CO2Color.argb.b = int(255.0f * LSPalette.CO2_B);
+	SetDebugFontColor(CO2Color.color);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 23), "COLOR2");
+	SetDebugFontColor(0xFFBFBFBF);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 24), "R  : %.3f", LSPalette.CO2_R);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 25), "G  : %.3f", LSPalette.CO2_G);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 26), "B  : %.3f", LSPalette.CO2_B);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 27), "POW: %.3f", LSPalette.CO2_pow);
+	//SP2
+	SP2Color.argb.a = 255;
+	SP2Color.argb.r = int(255.0f * LSPalette.SP2_R);
+	SP2Color.argb.g = int(255.0f * LSPalette.SP2_G);
+	SP2Color.argb.b = int(255.0f * LSPalette.SP2_B);
+	SetDebugFontColor(SP2Color.color);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 23), "SPECULAR2");
+	SetDebugFontColor(0xFFBFBFBF);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 24), "R  : %.3f", LSPalette.SP2_R);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 25), "G  : %.3f", LSPalette.SP2_G);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 26), "B  : %.3f", LSPalette.SP2_B);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 27), "POW: %.3f", LSPalette.SP2_pow);
+	return;
+	SetDebugFontColor(0xFF88FFAA);
+	DisplayDebugString(NJM_LOCATION(5, 30), "- STAGE LIGHTS INFO -");
+	//Stage Ambient
+	AmbColor.argb.a = 255;
+	AmbColor.argb.r = int(255.0f * CurrentStageLights->ambient[0]);
+	AmbColor.argb.g = int(255.0f * CurrentStageLights->ambient[1]);
+	AmbColor.argb.b = int(255.0f * CurrentStageLights->ambient[2]);
+	SetDebugFontColor(AmbColor.color);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 32), "AMBIENT");
+	SetDebugFontColor(0xFFBFBFBF);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 33), "R  : %.3f", CurrentStageLights->ambient[0]);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 34), "G  : %.3f", CurrentStageLights->ambient[1]);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 35), "B  : %.3f", CurrentStageLights->ambient[2]);
+	//Stage Diffuse
+	AmbColor.argb.a = 255;
+	AmbColor.argb.r = int(255.0f * CurrentStageLights->diffuse[0]);
+	AmbColor.argb.g = int(255.0f * CurrentStageLights->diffuse[1]);
+	AmbColor.argb.b = int(255.0f * CurrentStageLights->diffuse[2]);
+	SetDebugFontColor(AmbColor.color);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 32), "DIFFUSE");
+	SetDebugFontColor(0xFFBFBFBF);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 33), "R  : %.3f", CurrentStageLights->diffuse[0]);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 34), "G  : %.3f", CurrentStageLights->diffuse[1]);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 35), "B  : %.3f", CurrentStageLights->diffuse[2]);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 37), "DIR X: %.3f", CurrentStageLights->direction.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 38), "DIR Y: %.3f", CurrentStageLights->direction.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 39), "DIR Z: %.3f", CurrentStageLights->direction.z);
+	//DisplayDebugStringFormatted(NJM_LOCATION(17, 27), "POW: %.3f", LSPalette.SP2_pow);
+	//DrawAss(CO1Color, CO2Color, LSPalette.CO_pow, LSPalette.CO2_pow, VerticalResolution);
+	//DrawAss(SP1Color, SP2Color, LSPalette.SP_pow, LSPalette.SP2_pow, VerticalResolution-48);
+}
+
 void SoundDebug()
 {
-	DrawDebugRectangle(0.25f, 0.75f, 63, 44);
+	DrawDebugRectangle(0.25f, 0.75f, 63.75f, 44);
 	ScaleDebugFont(16);
 	SetDebugFontColor(0xFF88FFAA);
 	if (EnableFontScaling || HorizontalResolution < 1024) DisplayDebugString(NJM_LOCATION(12, 1), "- SOUND QUEUE -");
@@ -277,23 +434,6 @@ void SoundDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(2, 42), "ACTIVE SOUNDS: %d", ActiveSounds);
 }
 
-void RenderDeathPlanes(NJS_OBJECT *object)
-{
-	SetTextureToCommon();
-	njPushMatrix(0);
-	njControl3D_Backup();
-	njControl3D_Add(NJD_CONTROL_3D_CONSTANT_MATERIAL | NJD_CONTROL_3D_ENABLE_ALPHA | NJD_CONTROL_3D_CONSTANT_ATTR);
-	BackupConstantAttr();
-	AddConstantAttr(0, NJD_FLAG_USE_ALPHA);
-	SetMaterialAndSpriteColor_Float(0.5f, 1.0f, 0, 0);
-	DrawQueueDepthBias = 47952.0f;
-	ProcessModelNode(object, (QueuedModelFlagsB)4, 1.0f);
-	njPopMatrix(1u);
-	DrawQueueDepthBias = 0.0f;
-	RestoreConstantAttr();
-	njControl3D_Restore();
-}
-
 extern "C"
 {
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions &helperFunctions)
@@ -310,7 +450,7 @@ extern "C"
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && !(ControllerPointers[0]->HeldButtons & Buttons_A))
 		{
 			DebugSetting++;
-			if (DebugSetting > 6) DebugSetting = 0;
+			if (DebugSetting > 7) DebugSetting = 0;
 		}
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && ControllerPointers[0]->HeldButtons & Buttons_A)
 		{
@@ -341,6 +481,11 @@ extern "C"
 		if (DebugSetting == 4) InputDebug();
 		if (DebugSetting == 5) FogDebug();
 		if (DebugSetting == 6) SoundDebug();
+		if (DebugSetting == 7)
+		{
+			if (GetModuleHandle(L"sadx-dc-lighting") != nullptr) DebugSetting = 0;
+			else LSPaletteDebug();
+		}
 		if (DebugMode && (GameState == 7 || GameState == 3 || GameState == 4))
 		{
 			DeathPlanesEnabled = -1;
