@@ -482,12 +482,11 @@ void SoundBankInfoDebug()
 	DisplayDebugString(NJM_LOCATION(2, 4), "N  BANK  ENUM NAME");
 	SetDebugFontColor(0xFFBFBFBF);
 	int ActiveSounds = 0;
-	//Count sounds first
+	//Add data to debug info array
 	for (unsigned int i = 0; i < 35; i++)
 	{
 		if (SoundQueue[i].PlayTime != 0)
 		{
-			ActiveSounds++;
 			SoundQueueDebug[i].Bank_ID = GetBankNumberAndID(SoundQueue[i].SoundID).Bank_ID;
 			SoundQueueDebug[i].SE_ID = GetBankNumberAndID(SoundQueue[i].SoundID).SE_ID;
 			SoundQueueDebug[i].EnumName = SoundLookUp(SoundQueue[i].SoundID);
