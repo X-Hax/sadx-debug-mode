@@ -4,9 +4,11 @@
 #include "Data.h"
 
 char DebugSetting = 0;
+bool CrashDebug = false;
 bool EnableFontScaling = false;
 signed char DeathPlanesEnabled = -1;
 bool DisplaySoundHexID = true;
+int CurTexList_Current = 0;
 
 void DrawDebugRectangle(float leftchars, float topchars, float numchars_horz, float numchars_vert)
 {
@@ -72,6 +74,21 @@ void UpdateKeys()
 			CursorPos += 3;
 		}
 	}
+}
+
+static void RunObjectIndex_r(int a1);
+static Trampoline RunObjectIndex_t(0x40B0C0, 0x40B0C7, RunObjectIndex_r);
+static void __cdecl RunObjectIndex_r(int a1)
+{
+	auto original = reinterpret_cast<decltype(RunObjectIndex_r)*>(RunObjectIndex_t.Target());
+	if (CrashDebug)
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			if (ObjectListThing[i]) PrintDebug("Code change: %X\n", ObjectListThing[i]->MainSub);
+		}
+	}
+	original(a1);
 }
 
 void UpdateButtons()
@@ -230,6 +247,21 @@ void GameDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "ACT: %01d", CurrentAct);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "CHAO STAGE: %02d", CurrentChaoStage);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "CUTSCENE ID: %03d", CutsceneID);
+}
+
+Sint32 __cdecl njSetTexture_Hax(NJS_TEXLIST* texlist)
+{
+	CurrentTexList = texlist;
+	CurrentTextureNum = 0;
+	if (CrashDebug)
+	{
+		if (CurTexList_Current != (int)CurrentTexList)
+		{
+			PrintDebug("Texlist change: %X\n", CurrentTexList);
+			CurTexList_Current = (int)CurrentTexList;
+		}
+	}
+	return Direct3D_SetTexList(texlist);
 }
 
 void InputDebug()
@@ -539,6 +571,7 @@ extern "C"
 {
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions &helperFunctions)
 	{
+		WriteJump((void*)0x403070, njSetTexture_Hax);
 		WriteCall((void*)0x44AF3B, RenderDeathPlanes);
 		WriteData((signed char**)0x44AF32, &DeathPlanesEnabled);
 		const IniFile *config = new IniFile(std::string(path) + "\\config.ini");
@@ -577,10 +610,12 @@ extern "C"
 		{
 			if (KeyboardKeys[11].pressed) DisplaySoundHexID = !DisplaySoundHexID; //H key
 		}
+		if (KeyboardKeys[19].pressed) CrashDebug = !CrashDebug; //P key
 	}
 	__declspec(dllexport) void __cdecl OnFrame()
 	{
-		ScaleDebugFont(true);
+		ScaleDebugFont(16);
+		if (CrashDebug) DisplayDebugStringFormatted(NJM_LOCATION(0, 0), "CRASH LOG ON");
 		if (DebugSetting == 1) GameDebug();
 		if (DebugSetting == 2) PlayerDebug();
 		if (DebugSetting == 3) CameraDebug();
