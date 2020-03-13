@@ -76,21 +76,6 @@ void UpdateKeys()
 	}
 }
 
-static void RunObjectIndex_r(int a1);
-static Trampoline RunObjectIndex_t(0x40B0C0, 0x40B0C7, RunObjectIndex_r);
-static void __cdecl RunObjectIndex_r(int a1)
-{
-	auto original = reinterpret_cast<decltype(RunObjectIndex_r)*>(RunObjectIndex_t.Target());
-	if (CrashDebug)
-	{
-		for (int i = 0; i < 8; i++)
-		{
-			if (ObjectListThing[i]) PrintDebug("Code change: %X\n", ObjectListThing[i]->MainSub);
-		}
-	}
-	original(a1);
-}
-
 void UpdateButtons()
 {
 	std::string ButtonsString = "";
@@ -440,7 +425,7 @@ SoundBank_SE GetBankNumberAndID(int SoundID_HEX)
 		if (SoundID_HEX < SoundBanks[i+1].StartID)
 		{
 			result.Bank_Name = SoundBanks[i].Name;
-			result.SE_ID = SoundID_HEX - SoundBanks[i].StartID;
+			result.SE_ID = max(0, SoundID_HEX - SoundBanks[i].StartID-1);
 			result.Bank_ID = SoundBanks[i].Name[8]-48;
 			if (result.Bank_ID == 9) result.Bank_ID = 10; //to make 9 into A for ADX bank
 			return result;
