@@ -428,6 +428,7 @@ SoundBank_SE GetBankNumberAndID(int SoundID_HEX)
 			result.SE_ID = max(0, SoundID_HEX - SoundBanks[i].StartID-1);
 			result.Bank_ID = SoundBanks[i].Name[8]-48;
 			if (result.Bank_ID == 9) result.Bank_ID = 10; //to make 9 into A for ADX bank
+			if (result.Bank_ID == 0) result.SE_ID = SoundID_HEX; //exception for the first bank
 			return result;
 		}
 	}
@@ -556,6 +557,7 @@ extern "C"
 {
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions &helperFunctions)
 	{
+
 		WriteJump((void*)0x403070, njSetTexture_Hax);
 		WriteCall((void*)0x44AF3B, RenderDeathPlanes);
 		WriteData((signed char**)0x44AF32, &DeathPlanesEnabled);
