@@ -51,6 +51,7 @@ SoundQueueVisual SoundQueueDebug[] =
 	{ -1, -1, "", 0, 0, 0, 0 },
 	{ -1, -1, "", 0, 0, 0, 0 },
 	{ -1, -1, "", 0, 0, 0, 0 },
+	{ -1, -1, "", 0, 0, 0, 0 },
 };
 
 struct SoundBankData
@@ -1695,5 +1696,6 @@ DataPointer(char, CurrentCharacterSelection, 0x3B2A2FD);
 DataPointer(uint8_t, TextureFilterSettingForPoint_1, 0x0078B7C4);
 DataPointer(uint8_t, TextureFilterSettingForPoint_2, 0x0078B7D8);
 DataPointer(uint8_t, TextureFilterSettingForPoint_3, 0x0078B7EC);
+DataPointer(int, CurrentCutsceneCode, 0x3B2C568);
 
 #pragma warning(pop)

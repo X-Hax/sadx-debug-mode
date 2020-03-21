@@ -7,7 +7,7 @@ char DebugSetting = 0;
 bool CrashDebug = false;
 bool EnableFontScaling = false;
 signed char DeathPlanesEnabled = -1;
-bool DisplaySoundHexID = true;
+int DisplaySoundIDMode = 0;
 int CurTexList_Current = 0;
 
 void DrawDebugRectangle(float leftchars, float topchars, float numchars_horz, float numchars_vert)
@@ -218,7 +218,7 @@ void GameDebug()
 {
 	ScaleDebugFont(16);
 	SetDebugFontColor(0xFF88FFAA);
-	DrawDebugRectangle(1.75f, 0.75f, 22, 18);
+	DrawDebugRectangle(1.75f, 0.75f, 22, 18.5f);
 	DisplayDebugString(NJM_LOCATION(5, 1), "- GAME STATS -");
 	SetDebugFontColor(0xFFBFBFBF);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "FRAME   : %08d", FrameCounter);
@@ -231,7 +231,8 @@ void GameDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "LEVEL: %02d", CurrentLevel);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "ACT: %01d", CurrentAct);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "CHAO STAGE: %02d", CurrentChaoStage);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "CUTSCENE ID: %03d", CutsceneID);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "EVENT ID  : %03d", CutsceneID);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 17), "EVENT CODE: %X", CurrentCutsceneCode);
 }
 
 Sint32 __cdecl njSetTexture_Hax(NJS_TEXLIST* texlist)
@@ -438,9 +439,18 @@ SoundBank_SE GetBankNumberAndID(int SoundID_HEX)
 	return result;
 }
 
+const char* SoundLookUp(int SoundID)
+{
+	for (int i = 0; i < 1519; i++)
+	{
+		if (SENameLookUp[i].SE_ID == SoundID) return SENameLookUp[i].SE_Name;
+	}
+	return "ERROR";
+}
+
 void SoundDebug()
 {
-	DrawDebugRectangle(0.25f, 0.75f, 63.75f, 44);
+	DrawDebugRectangle(0.25f, 0.75f, 63.75f, 45);
 	ScaleDebugFont(16);
 	SetDebugFontColor(0xFF88FFAA);
 	if (EnableFontScaling || HorizontalResolution < 1024) DisplayDebugString(NJM_LOCATION(12, 1), "- SOUND QUEUE -");
@@ -450,22 +460,41 @@ void SoundDebug()
 	DisplayDebugString(NJM_LOCATION(2, 4), "N   ID   PRI  TIME  FLAG   VOL MI/MX   PAN   PITCH    QNUM");
 	SetDebugFontColor(0xFFBFBFBF);
 	int ActiveSounds = 0;
-	for (unsigned int i = 0; i < 35; i++)
+	for (unsigned int i = 0; i < 36; i++)
 	{
-		if (SoundQueue[i].PlayTime == 0)
+		//Add data to debug info array
+		if (SoundQueue[i].PlayTime != 0)
 		{
-			SetDebugFontColor(0xFFBF0000);
+			SoundQueueDebug[i].Bank_ID = GetBankNumberAndID(SoundQueue[i].SoundID).Bank_ID;
+			SoundQueueDebug[i].SE_ID = GetBankNumberAndID(SoundQueue[i].SoundID).SE_ID;
+			SoundQueueDebug[i].EnumName = SoundLookUp(SoundQueue[i].SoundID);
+			SoundQueueDebug[i].PlayTime = SoundQueue[i].PlayTime;
+			SoundQueueDebug[i].Flags = SoundQueue[i].Flags;
+			SoundQueueDebug[i].VolumeCur = SoundQueue[i].CurrentVolume;
+			SoundQueueDebug[i].VolumeMax = SoundQueue[i].MaxVolume;
 		}
+		if (SoundQueue[i].PlayTime == 0) SetDebugFontColor(0xFFBF0000);
 		else
 		{
-			SetDebugFontColor(0xFFBFBFBF);
+			if (SoundQueueDebug[i].Flags & 0x4000)
+			{
+				if (SoundQueueDebug[i].Flags & 0x1000) SetDebugFontColor(0xFF00FFFF);
+				else SetDebugFontColor(0xFFBF00BF);
+			}
+			else if (SoundQueue[i].Panning != 0) SetDebugFontColor(0xFFFF7FB2);
+			else if (SoundQueueDebug[i].Flags & 0x2000) SetDebugFontColor(0xFF7F4040);
+			else if (SoundQueueDebug[i].Flags & 0x1000) SetDebugFontColor(0xFFBFBF00);
+			else if (SoundQueueDebug[i].Flags & 0x100) SetDebugFontColor(0xFFFF7F00);
+			else if (SoundQueueDebug[i].Flags & 0x200) SetDebugFontColor(0xFF00BF00);
+			else SetDebugFontColor(0xFFBFBFBF);
 			ActiveSounds++;
 		}
 		PrintDebugNumber(NJM_LOCATION(1, i + 1 + 5), i, 2);
 		if (SoundQueue[i].SoundID != -1)
 		{
-			if (DisplaySoundHexID) DisplayDebugStringFormatted(NJM_LOCATION(5, i + 1 + 5), "%03X", SoundQueue[i].SoundID, 4);
-			else PrintDebugNumber(NJM_LOCATION(5, i + 1 + 5), SoundQueue[i].SoundID, 4);
+			if (DisplaySoundIDMode == 1) DisplayDebugStringFormatted(NJM_LOCATION(5, i + 1 + 5), "%03X", SoundQueue[i].SoundID, 4);
+			else if (DisplaySoundIDMode == 2) PrintDebugNumber(NJM_LOCATION(5, i + 1 + 5), SoundQueue[i].SoundID, 4);
+			else DisplayDebugStringFormatted(NJM_LOCATION(5, i + 1 + 5), "%01X/%02i", SoundQueueDebug[i].Bank_ID, SoundQueueDebug[i].SE_ID, 4);
 		}
 		if (SoundQueue[i].SoundID != -1) PrintDebugNumber(NJM_LOCATION(11, i + 1+ 5), SoundQueue[i].Priority, 2);
 		if (SoundQueue[i].PlayTime != 0) PrintDebugNumber(NJM_LOCATION(16, i + 1+ 5), SoundQueue[i].PlayTime, 4);
@@ -476,21 +505,12 @@ void SoundDebug()
 		if (SoundQueue[i].PlayTime != 0 && SoundQueue[i].qnum != 0) DisplayDebugStringFormatted(NJM_LOCATION(57, i + 1+ 5), "%02i", SoundQueue[i].qnum);
 	}
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(2, 42), "ACTIVE SOUNDS: %d", ActiveSounds);
-}
-
-const char* SoundLookUp(int SoundID)
-{
-	for (int i = 0; i < 1519; i++)
-	{
-		if (SENameLookUp[i].SE_ID == SoundID) return SENameLookUp[i].SE_Name;
-	}
-	return "ERROR";
+	DisplayDebugStringFormatted(NJM_LOCATION(2, 43), "ACTIVE SOUNDS: %d", ActiveSounds);
 }
 
 void SoundBankInfoDebug()
 {
-	DrawDebugRectangle(0.25f, 0.75f, 31.5f, 44);
+	DrawDebugRectangle(0.25f, 0.75f, 31.5f, 45);
 	ScaleDebugFont(16);
 	SetDebugFontColor(0xFF88FFAA);
 	if (EnableFontScaling || HorizontalResolution < 1024) DisplayDebugString(NJM_LOCATION(1, 1), "- SOUNDBANK INFO -");
@@ -501,7 +521,7 @@ void SoundBankInfoDebug()
 	SetDebugFontColor(0xFFBFBFBF);
 	int ActiveSounds = 0;
 	//Add data to debug info array
-	for (unsigned int i = 0; i < 35; i++)
+	for (unsigned int i = 0; i < 36; i++)
 	{
 		if (SoundQueue[i].PlayTime != 0)
 		{
@@ -514,7 +534,7 @@ void SoundBankInfoDebug()
 			SoundQueueDebug[i].VolumeMax = SoundQueue[i].MaxVolume;
 		}
 	}
-	for (unsigned int i = 0; i < 35; i++)
+	for (unsigned int i = 0; i < 36; i++)
 	{
 		if (SoundQueue[i].PlayTime == 0) SetDebugFontColor(0xFFBF0000);	
 		else
@@ -537,27 +557,42 @@ void SoundBankInfoDebug()
 	}
 	SetDebugFontColor(0xFFBFBFBF);
 	SetDebugFontColor(0xFFBF00BF);
-	DisplayDebugStringFormatted(NJM_LOCATION(1, 42), "3D");
+	DisplayDebugStringFormatted(NJM_LOCATION(1, 43), "3D");
 	SetDebugFontColor(0xFF00FFFF);
-	DisplayDebugStringFormatted(NJM_LOCATION(4, 42), "3D_CAM");
+	DisplayDebugStringFormatted(NJM_LOCATION(4, 43), "3D+OLD");
 	SetDebugFontColor(0xFFBFBF00);
-	DisplayDebugStringFormatted(NJM_LOCATION(11, 42), "CAM");
+	DisplayDebugStringFormatted(NJM_LOCATION(11, 43), "OLD");
 	SetDebugFontColor(0xFFFF7F00);
-	DisplayDebugStringFormatted(NJM_LOCATION(15, 42), "POS");
+	DisplayDebugStringFormatted(NJM_LOCATION(15, 43), "POS");
 	SetDebugFontColor(0xFF00BF00);
-	DisplayDebugStringFormatted(NJM_LOCATION(19, 42), "VOL");
+	DisplayDebugStringFormatted(NJM_LOCATION(19, 43), "VOL");
 	SetDebugFontColor(0xFFFF7FB2);
-	DisplayDebugStringFormatted(NJM_LOCATION(23, 42), "PAN");
+	DisplayDebugStringFormatted(NJM_LOCATION(23, 43), "PAN");
 	SetDebugFontColor(0xFF7F4040);
-	DisplayDebugStringFormatted(NJM_LOCATION(27, 42), "FRQ");
+	DisplayDebugStringFormatted(NJM_LOCATION(27, 43), "FRQ");
 	SetDebugFontColor(0xFFBFBFBF);
+}
+
+static void __cdecl LoadSoundList_r(int a1);
+static Trampoline LoadSoundList_t(0x4238E0, 0x4238E6, LoadSoundList_r);
+static void __cdecl LoadSoundList_r(int a1)
+{
+	for (int i = 0; i < SoundLists[a1].Count; i++)
+	{
+		PrintDebug("Loaded Sounbank %d: %s (SoundList %d)\n", SoundLists[a1].List[i].Bank, SoundLists[a1].List[i].Filename, a1);
+	}
+	auto original = reinterpret_cast<decltype(LoadSoundList_r)*>(LoadSoundList_t.Target());
+	original(a1);
 }
 
 extern "C"
 {
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions &helperFunctions)
 	{
-
+	
+		WriteData<1>((char*)0x780872, 0x02u); //Expand memory for debug string allocation
+		WriteData((int*)0x780897, 256); //Expand memory for debug string allocation
+		WriteData((int*)0x780892, 4096); //Expand memory for debug string allocation
 		WriteJump((void*)0x403070, njSetTexture_Hax);
 		WriteCall((void*)0x44AF3B, RenderDeathPlanes);
 		WriteData((signed char**)0x44AF32, &DeathPlanesEnabled);
@@ -569,6 +604,13 @@ extern "C"
 	}
 	__declspec(dllexport) void __cdecl OnInput()
 	{
+		if (KeyboardKeys[30].pressed) DebugSetting = 1; //1 key
+		if (KeyboardKeys[31].pressed) DebugSetting = 2; //2 key
+		if (KeyboardKeys[32].pressed) DebugSetting = 3; //3 key
+		if (KeyboardKeys[33].pressed) DebugSetting = 4; //4 key
+		if (KeyboardKeys[34].pressed) DebugSetting = 5; //5 key
+		if (KeyboardKeys[35].pressed) DebugSetting = 6; //6 key
+		if (KeyboardKeys[36].pressed) DebugSetting = 7; //7 key
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && !(ControllerPointers[0]->HeldButtons & Buttons_A))
 		{
 			DebugSetting++;
@@ -593,9 +635,10 @@ extern "C"
 			UpdateKeys();
 			UpdateButtons();
 		}
-		if (DebugSetting == 6 || DebugSetting == 7)
+		if (DebugSetting == 6)
 		{
-			if (KeyboardKeys[11].pressed) DisplaySoundHexID = !DisplaySoundHexID; //H key
+			if (KeyboardKeys[11].pressed) DisplaySoundIDMode++; //H key
+			if (DisplaySoundIDMode > 2) DisplaySoundIDMode = 0;
 		}
 		if (KeyboardKeys[19].pressed) CrashDebug = !CrashDebug; //P key
 	}
