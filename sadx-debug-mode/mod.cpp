@@ -9,6 +9,7 @@ bool EnableFontScaling = false;
 signed char DeathPlanesEnabled = -1;
 int DisplaySoundIDMode = 0;
 int CurTexList_Current = 0;
+int VoiceID = -1;
 
 void DrawDebugRectangle(float leftchars, float topchars, float numchars_horz, float numchars_vert)
 {
@@ -218,7 +219,7 @@ void GameDebug()
 {
 	ScaleDebugFont(16);
 	SetDebugFontColor(0xFF88FFAA);
-	DrawDebugRectangle(1.75f, 0.75f, 22, 18.5f);
+	DrawDebugRectangle(1.75f, 0.75f, 22, 21.5f);
 	DisplayDebugString(NJM_LOCATION(5, 1), "- GAME STATS -");
 	SetDebugFontColor(0xFFBFBFBF);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "FRAME   : %08d", FrameCounter);
@@ -233,6 +234,8 @@ void GameDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "CHAO STAGE: %02d", CurrentChaoStage);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "EVENT ID  : %03d", CutsceneID);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 17), "EVENT CODE: %X", CurrentCutsceneCode);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "MUSIC ID  : %d", CurrentSong);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "LAST VOICE: %d", VoiceID);
 }
 
 Sint32 __cdecl njSetTexture_Hax(NJS_TEXLIST* texlist)
@@ -582,6 +585,16 @@ static void __cdecl LoadSoundList_r(int a1)
 		PrintDebug("Loaded Sounbank %d: %s (SoundList %d)\n", SoundLists[a1].List[i].Bank, SoundLists[a1].List[i].Filename, a1);
 	}
 	auto original = reinterpret_cast<decltype(LoadSoundList_r)*>(LoadSoundList_t.Target());
+	original(a1);
+}
+
+static void __cdecl PlayVoice_r(int a1);
+static Trampoline PlayVoice_t(0x425710, 0x425715, PlayVoice_r);
+static void __cdecl PlayVoice_r(int a1)
+{
+	//PrintDebug("Play voice: %d, %s\n", a1, Voices[a1].Name);
+	VoiceID = a1;
+	auto original = reinterpret_cast<decltype(PlayVoice_r)*>(PlayVoice_t.Target());
 	original(a1);
 }
 
