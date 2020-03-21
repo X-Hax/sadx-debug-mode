@@ -453,6 +453,12 @@ const char* SoundLookUp(int SoundID)
 
 void SoundDebug()
 {
+	if (!AudioThreadStarted)
+	{
+		SetDebugFontColor(0xFFFF0000);
+		DisplayDebugString(NJM_LOCATION(2, 1), "- SOUND INFO UNAVAILABLE -");
+		return;
+	}
 	DrawDebugRectangle(0.25f, 0.75f, 63.75f, 45);
 	ScaleDebugFont(16);
 	SetDebugFontColor(0xFF88FFAA);
@@ -513,7 +519,13 @@ void SoundDebug()
 
 void SoundBankInfoDebug()
 {
-	DrawDebugRectangle(0.25f, 0.75f, 31.5f, 45);
+	if (!AudioThreadStarted) 
+	{
+		SetDebugFontColor(0xFFFF0000);
+		DisplayDebugString(NJM_LOCATION(2, 1), "- SOUND INFO UNAVAILABLE -");
+		return;
+	}
+	DrawDebugRectangle(0.25f, 0.75f, 31.0f, 45);
 	ScaleDebugFont(16);
 	SetDebugFontColor(0xFF88FFAA);
 	if (EnableFontScaling || HorizontalResolution < 1024) DisplayDebugString(NJM_LOCATION(1, 1), "- SOUNDBANK INFO -");
@@ -624,6 +636,7 @@ extern "C"
 		if (KeyboardKeys[34].pressed) DebugSetting = 5; //5 key
 		if (KeyboardKeys[35].pressed) DebugSetting = 6; //6 key
 		if (KeyboardKeys[36].pressed) DebugSetting = 7; //7 key
+		if (KeyboardKeys[39].pressed) DebugSetting = 0; //0 key
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && !(ControllerPointers[0]->HeldButtons & Buttons_A))
 		{
 			DebugSetting++;
@@ -658,18 +671,21 @@ extern "C"
 	__declspec(dllexport) void __cdecl OnFrame()
 	{
 		ScaleDebugFont(16);
-		if (CrashDebug) DisplayDebugStringFormatted(NJM_LOCATION(0, 0), "CRASH LOG ON");
-		if (DebugSetting == 1) GameDebug();
-		if (DebugSetting == 2) PlayerDebug();
-		if (DebugSetting == 3) CameraDebug();
-		if (DebugSetting == 4) InputDebug();
-		if (DebugSetting == 5) FogDebug();
-		if (DebugSetting == 6) SoundDebug();
-		if (DebugSetting == 7) SoundBankInfoDebug();
-		if (DebugSetting == 8)
+		if (!MissedFrames)
 		{
-			if (GetModuleHandle(L"sadx-dc-lighting") != nullptr) DebugSetting = 0;
-			else LSPaletteDebug();
+			if (CrashDebug) DisplayDebugStringFormatted(NJM_LOCATION(0, 0), "CRASH LOG ON");
+			if (DebugSetting == 1) GameDebug();
+			if (DebugSetting == 2) PlayerDebug();
+			if (DebugSetting == 3) CameraDebug();
+			if (DebugSetting == 4) InputDebug();
+			if (DebugSetting == 5) FogDebug();
+			if (DebugSetting == 6) SoundDebug();
+			if (DebugSetting == 7) SoundBankInfoDebug();
+			if (DebugSetting == 8)
+			{
+				if (GetModuleHandle(L"sadx-dc-lighting") != nullptr) DebugSetting = 0;
+				else LSPaletteDebug();
+			}
 		}
 		if (DebugMode && (GameState == 7 || GameState == 3 || GameState == 4))
 		{
