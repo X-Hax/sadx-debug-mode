@@ -424,16 +424,26 @@ SoundBank_SE GetBankNumberAndID(int SoundID_HEX)
 	char SoundID = 0;
 	const char* BankName = "ASS";
 	SoundBank_SE result;
-	for (int i = 0; i < LengthOfArray(SoundBanks) - 1; i++)
+	if (SoundID_HEX == -1)
 	{
-		if (SoundID_HEX < SoundBanks[i+1].StartID)
+		result.Bank_Name = "";
+		result.Bank_ID = -1;
+		result.SE_ID = -1;
+		return result;
+	}
+	else
+	{
+		for (int i = 0; i < LengthOfArray(SoundBanks) - 1; i++)
 		{
-			result.Bank_Name = SoundBanks[i].Name;
-			result.SE_ID = max(0, SoundID_HEX - SoundBanks[i].StartID-1);
-			result.Bank_ID = SoundBanks[i].Name[8]-48;
-			if (result.Bank_ID == 9) result.Bank_ID = 10; //to make 9 into A for ADX bank
-			if (result.Bank_ID == 0) result.SE_ID = SoundID_HEX; //exception for the first bank
-			return result;
+			if (SoundID_HEX < SoundBanks[i + 1].StartID)
+			{
+				result.Bank_Name = SoundBanks[i].Name;
+				result.SE_ID = max(0, SoundID_HEX - SoundBanks[i].StartID - 1);
+				result.Bank_ID = SoundBanks[i].Name[8] - 48;
+				if (result.Bank_ID == 9) result.Bank_ID = 10; //to make 9 into A for ADX bank
+				if (result.Bank_ID == 0) result.SE_ID = SoundID_HEX; //exception for the first bank
+				return result;
+			}
 		}
 	}
 	result.Bank_Name = "ASS";
@@ -453,12 +463,6 @@ const char* SoundLookUp(int SoundID)
 
 void SoundDebug()
 {
-	if (!AudioThreadStarted)
-	{
-		SetDebugFontColor(0xFFFF0000);
-		DisplayDebugString(NJM_LOCATION(2, 1), "- SOUND INFO UNAVAILABLE -");
-		return;
-	}
 	DrawDebugRectangle(0.25f, 0.75f, 63.75f, 45);
 	ScaleDebugFont(16);
 	SetDebugFontColor(0xFF88FFAA);
@@ -519,12 +523,6 @@ void SoundDebug()
 
 void SoundBankInfoDebug()
 {
-	if (!AudioThreadStarted) 
-	{
-		SetDebugFontColor(0xFFFF0000);
-		DisplayDebugString(NJM_LOCATION(2, 1), "- SOUND INFO UNAVAILABLE -");
-		return;
-	}
 	DrawDebugRectangle(0.25f, 0.75f, 31.0f, 45);
 	ScaleDebugFont(16);
 	SetDebugFontColor(0xFF88FFAA);
@@ -570,7 +568,6 @@ void SoundBankInfoDebug()
 		if (SoundQueueDebug[i].Bank_ID != -1) DisplayDebugStringFormatted(NJM_LOCATION(5, i + 1 + 5), "%01X/%02i", SoundQueueDebug[i].Bank_ID, SoundQueueDebug[i].SE_ID, 4);
 		if (SoundQueueDebug[i].EnumName != "") DisplayDebugStringFormatted(NJM_LOCATION(11, i + 1 + 5), SoundQueueDebug[i].EnumName, 4);
 	}
-	SetDebugFontColor(0xFFBFBFBF);
 	SetDebugFontColor(0xFFBF00BF);
 	DisplayDebugStringFormatted(NJM_LOCATION(1, 43), "3D");
 	SetDebugFontColor(0xFF00FFFF);
@@ -588,9 +585,9 @@ void SoundBankInfoDebug()
 	SetDebugFontColor(0xFFBFBFBF);
 }
 
-static void __cdecl LoadSoundList_r(int a1);
+static void __cdecl LoadSoundList_r(signed int a1);
 static Trampoline LoadSoundList_t(0x4238E0, 0x4238E6, LoadSoundList_r);
-static void __cdecl LoadSoundList_r(int a1)
+static void __cdecl LoadSoundList_r(signed int a1)
 {
 	for (int i = 0; i < SoundLists[a1].Count; i++)
 	{
@@ -614,10 +611,9 @@ extern "C"
 {
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions &helperFunctions)
 	{
-	
-		WriteData<1>((char*)0x780872, 0x02u); //Expand memory for debug string allocation
+		/*WriteData<1>((char*)0x780872, 0x02u); //Expand memory for debug string allocation
 		WriteData((int*)0x780897, 256); //Expand memory for debug string allocation
-		WriteData((int*)0x780892, 4096); //Expand memory for debug string allocation
+		WriteData((int*)0x780892, 4096); //Expand memory for debug string allocation*/
 		WriteJump((void*)0x403070, njSetTexture_Hax);
 		WriteCall((void*)0x44AF3B, RenderDeathPlanes);
 		WriteData((signed char**)0x44AF32, &DeathPlanesEnabled);
