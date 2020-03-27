@@ -3,6 +3,11 @@
 #include "Trampoline.h"
 #include "Data.h"
 
+int CurrentPalettes[]= { -1, -1, -1, -1, -1, -1 };
+int CurrentLights[] = { -1, -1, -1, -1, -1, -1 };
+int CurrentPalette = 0;
+int CurrentStageLight = 0;
+
 char DebugSetting = 0;
 bool CrashDebug = false;
 bool EnableFontScaling = false;
@@ -67,7 +72,7 @@ void RenderDeathPlanes(NJS_OBJECT* object)
 void UpdateKeys()
 {
 	int CursorPos = 14;
-	for (int i = 0; i < 256; i++)
+	for (int i = 1; i < 256; i++) //exclude key 0 which is always pressed
 	{
 		if (KeyboardKeys[i].held)
 		{
@@ -272,6 +277,24 @@ void InputDebug()
 	DisplayDebugString(NJM_LOCATION(7, 17), "- KEYBOARD INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "KEYS HELD:");
+	njPushMatrix(0);
+	float FontScale = 1.0f;
+	if ((float)HorizontalResolution / (float)VerticalResolution > 1.33f) FontScale = floor((float)VerticalResolution / 480.0f) * 0.5f;
+	else FontScale = floor((float)HorizontalResolution / 640.0f) * 0.5f;
+	float AnalogRectPosX = (float)HorizontalResolution - 160.0f * FontScale;
+	float AnalogRectPosY = (float)VerticalResolution - 160.0f * FontScale;
+	float XPos = (float)ControllerPointers[0]->LeftStickX * FontScale * 0.5f;
+	float YPos = (float)ControllerPointers[0]->LeftStickY * FontScale * 0.5f;
+	float XPos2 = (float)ControllerPointers[0]->RightStickX * FontScale * 0.5f;
+	float YPos2 = (float)ControllerPointers[0]->RightStickY * FontScale * 0.5f;
+	float AnalogCenterX = XPos + AnalogRectPosX + 64.0f * FontScale;
+	float AnalogCenterY = YPos + AnalogRectPosY + 64.0f * FontScale;
+	float AnalogCenterX2 = XPos2 + AnalogRectPosX + 64.0f * FontScale;
+	float AnalogCenterY2 = YPos2 + AnalogRectPosY + 64.0f * FontScale;
+	DrawRect_Queue(AnalogRectPosX, AnalogRectPosY, AnalogRectPosX + 137.0f*FontScale, AnalogRectPosY + 137.0f * FontScale, 64000.0f, 0x7F000000, QueuedModelFlagsB_SomeTextureThing);
+	DrawRect_Queue(AnalogCenterX2, AnalogCenterY2, AnalogCenterX2 + 10.0f * FontScale, AnalogCenterY2 + 10.0f * FontScale, 64000.0f, 0xFF0000FF, QueuedModelFlagsB_SomeTextureThing);
+	DrawRect_Queue(AnalogCenterX, AnalogCenterY, AnalogCenterX + 10.0f * FontScale, AnalogCenterY + 10.0f * FontScale, 64000.0f, 0xFFFF0000, QueuedModelFlagsB_SomeTextureThing);
+	njPopMatrix(1u);
 }
 
 NJS_POINT2COL Pause_Point2Col;
@@ -309,113 +332,195 @@ void DrawAss(NJS_COLOR color1, NJS_COLOR color2, float C1_POW, float C2_POW, flo
 	}
 }
 
+void AddLSPalette(int ID)
+{
+	for (int q = 0; q < LengthOfArray(CurrentPalettes); q++)
+	{
+		if (CurrentPalettes[q] == ID)
+		{
+			return;
+		}
+		if (CurrentPalettes[q] == -1)
+		{
+			CurrentPalettes[q] = ID;
+			//PrintDebug("Added palette: %d\n", ID);
+			return;
+		}
+	}
+}
+
+void AddStageLight(int ID)
+{
+	for (int q = 0; q < LengthOfArray(CurrentLights); q++)
+	{
+		if (CurrentLights[q] == ID)
+		{
+			return;
+		}
+		if (CurrentLights[q] == -1)
+		{
+			CurrentLights[q] = ID;
+			//PrintDebug("Added stage light: %d\n", ID);
+			return;
+		}
+	}
+}
+
+void FindLSPalette()
+{
+	for (int q = 0; q < LengthOfArray(CurrentPalettes); q++)
+	{
+		CurrentPalettes[q] = -1;
+	}
+	for (int i = 0; i < 255; i++)
+	{
+		if (LightPaletteData[i].Level == CurrentLevel && LightPaletteData[i].Act == CurrentAct)
+		{
+			//PrintDebug("Adding palette\n");
+			AddLSPalette(i);
+		}
+	}
+}
+
+void FindStageLight()
+{
+	for (int q = 0; q < LengthOfArray(CurrentLights); q++)
+	{
+		CurrentLights[q] = -1;
+	}
+	for (int i = 0; i < 277; i++)
+	{
+		if (StageLightList[i].level == CurrentLevel && StageLightList[i].act == CurrentAct)
+		{
+			//PrintDebug("Adding stage light\n");
+			AddStageLight(i);
+		}
+	}
+}
+
 void LSPaletteDebug()
 {
+	FindLSPalette();
 	NJS_COLOR AmbColor;
 	NJS_COLOR CO1Color;
 	NJS_COLOR CO2Color;
 	NJS_COLOR SP1Color;
 	NJS_COLOR SP2Color;
-	AmbColor.argb.a = 255;
-	AmbColor.argb.r = int(255.0f * LSPalette.AMB_R);
-	AmbColor.argb.g = int(255.0f * LSPalette.AMB_G);
-	AmbColor.argb.b = int(255.0f * LSPalette.AMB_B);
 	ScaleDebugFont(16);
 	DrawDebugRectangle(1.75f, 0.75f, 29, 29);
-	SetDebugFontColor(0xFF88FFAA);
+	if (GetModuleHandle(L"sadx-dc-lighting") != nullptr) SetDebugFontColor(0xFFFF0000);
+	else SetDebugFontColor(0xFF88FFAA);
 	DisplayDebugString(NJM_LOCATION(6, 1), "- LS PALETTE INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "TYPE: %X", LSPalette.Type);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "FLAGS: %X", LSPalette.Flags);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 6), "DIR X: %.3f", LSPalette.Direction.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "DIR Y: %.3f", LSPalette.Direction.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "DIR Z: %.3f", LSPalette.Direction.z);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "DIFFUSE: %.3f", LSPalette.DIF);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "TYPE : %X", LightPaletteData[CurrentPalettes[CurrentPalette]].Type);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "FLAGS: %X", LightPaletteData[CurrentPalettes[CurrentPalette]].Flags);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 6), "DIR X: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].Direction.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "DIR Y: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].Direction.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "DIR Z: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].Direction.z);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "DIFFUSE: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].DIF);
+	AmbColor.argb.a = 255;
+	AmbColor.argb.r = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].AMB_R);
+	AmbColor.argb.g = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].AMB_G);
+	AmbColor.argb.b = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].AMB_B);
 	SetDebugFontColor(AmbColor.color);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "AMBIENT");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "R: %.3f", LSPalette.AMB_R);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "G: %.3f", LSPalette.AMB_G);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "B: %.3f", LSPalette.AMB_B);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "R: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].AMB_R);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "G: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].AMB_G);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "B: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].AMB_B);
 	//CO1
 	CO1Color.argb.a = 255;
-	CO1Color.argb.r = int(255.0f * LSPalette.CO_R);
-	CO1Color.argb.g = int(255.0f * LSPalette.CO_G);
-	CO1Color.argb.b = int(255.0f * LSPalette.CO_B);
+	CO1Color.argb.r = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].CO_R);
+	CO1Color.argb.g = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].CO_G);
+	CO1Color.argb.b = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].CO_B);
 	SetDebugFontColor(CO1Color.color);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 17), "COLOR1");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 18), "R  : %.3f", LSPalette.CO_R);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "G  : %.3f", LSPalette.CO_G);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "B  : %.3f", LSPalette.CO_B);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "POW: %.3f", LSPalette.CO_pow);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 18), "R  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO_R);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "G  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO_G);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "B  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO_B);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "POW: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO_pow);
 	//SP1
 	SP1Color.argb.a = 255;
-	SP1Color.argb.r = int(255.0f * LSPalette.SP_R);
-	SP1Color.argb.g = int(255.0f * LSPalette.SP_G);
-	SP1Color.argb.b = int(255.0f * LSPalette.SP_B);
+	SP1Color.argb.r = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].SP_R);
+	SP1Color.argb.g = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].SP_G);
+	SP1Color.argb.b = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].SP_B);
 	SetDebugFontColor(SP1Color.color);
 	DisplayDebugStringFormatted(NJM_LOCATION(17, 17), "SPECULAR1");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 18), "R  : %.3f", LSPalette.SP_R);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 19), "G  : %.3f", LSPalette.SP_G);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 20), "B  : %.3f", LSPalette.SP_B);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 21), "POW: %.3f", LSPalette.SP_pow);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 18), "R  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP_R);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 19), "G  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP_G);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 20), "B  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP_B);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 21), "POW: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP_pow);
 	//CO2
 	CO2Color.argb.a = 255;
-	CO2Color.argb.r = int(255.0f * LSPalette.CO2_R);
-	CO2Color.argb.g = int(255.0f * LSPalette.CO2_G);
-	CO2Color.argb.b = int(255.0f * LSPalette.CO2_B);
+	CO2Color.argb.r = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_R);
+	CO2Color.argb.g = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_G);
+	CO2Color.argb.b = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_B);
 	SetDebugFontColor(CO2Color.color);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 23), "COLOR2");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 24), "R  : %.3f", LSPalette.CO2_R);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 25), "G  : %.3f", LSPalette.CO2_G);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 26), "B  : %.3f", LSPalette.CO2_B);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 27), "POW: %.3f", LSPalette.CO2_pow);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 24), "R  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_R);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 25), "G  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_G);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 26), "B  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_B);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 27), "POW: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_pow);
 	//SP2
 	SP2Color.argb.a = 255;
-	SP2Color.argb.r = int(255.0f * LSPalette.SP2_R);
-	SP2Color.argb.g = int(255.0f * LSPalette.SP2_G);
-	SP2Color.argb.b = int(255.0f * LSPalette.SP2_B);
+	SP2Color.argb.r = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_R);
+	SP2Color.argb.g = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_G);
+	SP2Color.argb.b = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_B);
 	SetDebugFontColor(SP2Color.color);
 	DisplayDebugStringFormatted(NJM_LOCATION(17, 23), "SPECULAR2");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 24), "R  : %.3f", LSPalette.SP2_R);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 25), "G  : %.3f", LSPalette.SP2_G);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 26), "B  : %.3f", LSPalette.SP2_B);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 27), "POW: %.3f", LSPalette.SP2_pow);
-	return;
-	SetDebugFontColor(0xFF88FFAA);
-	DisplayDebugString(NJM_LOCATION(5, 30), "- STAGE LIGHTS INFO -");
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 24), "R  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_R);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 25), "G  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_G);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 26), "B  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_B);
+	DisplayDebugStringFormatted(NJM_LOCATION(17, 27), "POW: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_pow);
+	//DisplayDebugStringFormatted(NJM_LOCATION(17, 27), "POW: %.3f", LightPaletteData[CurrentPalette].SP2_pow);
+	//DrawAss(CO1Color, CO2Color, LightPaletteData[CurrentPalette].CO_pow, LightPaletteData[CurrentPalette].CO2_pow, VerticalResolution);
+	//DrawAss(SP1Color, SP2Color, LSPalette.SP_pow, LSPalette.SP2_pow, VerticalResolution-48);
+}
+
+void StageLightDebug()
+{
+	FindStageLight();
+	NJS_COLOR AmbColor;
+	ScaleDebugFont(16);
+	DrawDebugRectangle(1.75f, 0.75f, 29, 22.5f);
+	if (GetModuleHandle(L"sadx-dc-lighting") != nullptr) SetDebugFontColor(0xFFFF0000);
+	else SetDebugFontColor(0xFF88FFAA);
+	DisplayDebugString(NJM_LOCATION(5, 1), "- STAGE LIGHTS INFO -");
+	SetDebugFontColor(0xFFBFBFBF);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "INDEX: %d", StageLights[CurrentLights[CurrentStageLight]].index);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "FLAGS: %d", StageLights[CurrentLights[CurrentStageLight]].use_direction);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 6), "DIR X: %.3f", StageLights[CurrentLights[CurrentStageLight]].direction.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "DIR Y: %.3f", StageLights[CurrentLights[CurrentStageLight]].direction.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "DIR Z: %.3f", StageLights[CurrentLights[CurrentStageLight]].direction.z);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "DIFFUSE : %.3f", StageLights[CurrentLights[CurrentStageLight]].dif);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 11), "SPECULAR: %.3f", StageLights[CurrentLights[CurrentStageLight]].spe);
 	//Stage Ambient
 	AmbColor.argb.a = 255;
-	AmbColor.argb.r = int(255.0f * CurrentStageLights->ambient[0]);
-	AmbColor.argb.g = int(255.0f * CurrentStageLights->ambient[1]);
-	AmbColor.argb.b = int(255.0f * CurrentStageLights->ambient[2]);
+	AmbColor.argb.r = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].amb_r);
+	AmbColor.argb.g = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].amb_g);
+	AmbColor.argb.b = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].amb_b);
 	SetDebugFontColor(AmbColor.color);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 32), "AMBIENT");
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "AMBIENT"); 
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 33), "R  : %.3f", CurrentStageLights->ambient[0]);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 34), "G  : %.3f", CurrentStageLights->ambient[1]);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 35), "B  : %.3f", CurrentStageLights->ambient[2]);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "R  : %.3f", StageLights[CurrentLights[CurrentStageLight]].amb_r);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "G  : %.3f", StageLights[CurrentLights[CurrentStageLight]].amb_g);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "B  : %.3f", StageLights[CurrentLights[CurrentStageLight]].amb_b);
 	//Stage Diffuse
 	AmbColor.argb.a = 255;
-	AmbColor.argb.r = int(255.0f * CurrentStageLights->diffuse[0]);
-	AmbColor.argb.g = int(255.0f * CurrentStageLights->diffuse[1]);
-	AmbColor.argb.b = int(255.0f * CurrentStageLights->diffuse[2]);
+	AmbColor.argb.r = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].r);
+	AmbColor.argb.g = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].g);
+	AmbColor.argb.b = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].b);
 	SetDebugFontColor(AmbColor.color);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 32), "DIFFUSE");
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 18), "COLOR");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 33), "R  : %.3f", CurrentStageLights->diffuse[0]);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 34), "G  : %.3f", CurrentStageLights->diffuse[1]);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 35), "B  : %.3f", CurrentStageLights->diffuse[2]);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 37), "DIR X: %.3f", CurrentStageLights->direction.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 38), "DIR Y: %.3f", CurrentStageLights->direction.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 39), "DIR Z: %.3f", CurrentStageLights->direction.z);
-	//DisplayDebugStringFormatted(NJM_LOCATION(17, 27), "POW: %.3f", LSPalette.SP2_pow);
-	//DrawAss(CO1Color, CO2Color, LSPalette.CO_pow, LSPalette.CO2_pow, VerticalResolution);
-	//DrawAss(SP1Color, SP2Color, LSPalette.SP_pow, LSPalette.SP2_pow, VerticalResolution-48);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "R  : %.3f", StageLights[CurrentLights[CurrentStageLight]].r);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "G  : %.3f", StageLights[CurrentLights[CurrentStageLight]].g);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "B  : %.3f", StageLights[CurrentLights[CurrentStageLight]].b);
+
 }
 
 SoundBank_SE GetBankNumberAndID(int SoundID_HEX)
@@ -632,6 +737,8 @@ extern "C"
 		if (KeyboardKeys[34].pressed) DebugSetting = 5; //5 key
 		if (KeyboardKeys[35].pressed) DebugSetting = 6; //6 key
 		if (KeyboardKeys[36].pressed) DebugSetting = 7; //7 key
+		if (KeyboardKeys[37].pressed) DebugSetting = 8; //8 key
+		if (KeyboardKeys[38].pressed) DebugSetting = 9; //9 key
 		if (KeyboardKeys[39].pressed) DebugSetting = 0; //0 key
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && !(ControllerPointers[0]->HeldButtons & Buttons_A))
 		{
@@ -651,7 +758,7 @@ extern "C"
 				DebugMode = 1;
 				DeathPlanesEnabled = 1;
 			}
-		}		
+		}
 		if (DebugSetting == 4)
 		{
 			UpdateKeys();
@@ -662,6 +769,16 @@ extern "C"
 			if (KeyboardKeys[11].pressed) DisplaySoundIDMode++; //H key
 			if (DisplaySoundIDMode > 2) DisplaySoundIDMode = 0;
 		}
+		if (DebugSetting == 8)
+		{
+			if (KeyboardKeys[11].pressed) CurrentPalette++; //H key
+			if (CurrentPalettes[CurrentPalette] == -1) CurrentPalette = 0;
+		}
+		if (DebugSetting == 9)
+		{
+			if (KeyboardKeys[11].pressed) CurrentStageLight++; //H key
+			if (CurrentLights[CurrentStageLight] == -1) CurrentStageLight = 0;
+		}
 		if (KeyboardKeys[19].pressed) CrashDebug = !CrashDebug; //P key
 	}
 	__declspec(dllexport) void __cdecl OnFrame()
@@ -669,7 +786,12 @@ extern "C"
 		ScaleDebugFont(16);
 		if (!MissedFrames)
 		{
-			if (CrashDebug) DisplayDebugStringFormatted(NJM_LOCATION(0, 0), "CRASH LOG ON");
+			if (CrashDebug)
+			{
+				SetDebugFontColor(0xFFFF0000);
+				DisplayDebugStringFormatted(NJM_LOCATION(0, 0), "CRASH LOG ON");
+				SetDebugFontColor(0xFFBFBFBF);
+			}
 			if (DebugSetting == 1) GameDebug();
 			if (DebugSetting == 2) PlayerDebug();
 			if (DebugSetting == 3) CameraDebug();
@@ -677,11 +799,8 @@ extern "C"
 			if (DebugSetting == 5) FogDebug();
 			if (DebugSetting == 6) SoundDebug();
 			if (DebugSetting == 7) SoundBankInfoDebug();
-			if (DebugSetting == 8)
-			{
-				if (GetModuleHandle(L"sadx-dc-lighting") != nullptr) DebugSetting = 0;
-				else LSPaletteDebug();
-			}
+			if (DebugSetting == 8) LSPaletteDebug();
+			if (DebugSetting == 9) StageLightDebug();
 		}
 		if (DebugMode && (GameState == 7 || GameState == 3 || GameState == 4))
 		{
