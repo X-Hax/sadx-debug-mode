@@ -743,7 +743,7 @@ extern "C"
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && !(ControllerPointers[0]->HeldButtons & Buttons_A))
 		{
 			DebugSetting++;
-			if (DebugSetting > 8) DebugSetting = 0;
+			if (DebugSetting > 9) DebugSetting = 0;
 		}
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && ControllerPointers[0]->HeldButtons & Buttons_A)
 		{
