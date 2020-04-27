@@ -3769,5 +3769,7 @@ DataPointer(uint8_t, TextureFilterSettingForPoint_1, 0x0078B7C4);
 DataPointer(uint8_t, TextureFilterSettingForPoint_2, 0x0078B7D8);
 DataPointer(uint8_t, TextureFilterSettingForPoint_3, 0x0078B7EC);
 DataPointer(int, CurrentCutsceneCode, 0x3B2C568);
+DataPointer(char, Byte1, 0x78BA50);
+DataPointer(char, Byte2, 0x78B880);
 
 #pragma warning(pop)

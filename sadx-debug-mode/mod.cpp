@@ -15,6 +15,9 @@ signed char DeathPlanesEnabled = -1;
 int DisplaySoundIDMode = 0;
 int CurTexList_Current = 0;
 int VoiceID = -1;
+bool FreezeFrame_Pressed = false;
+int FreezeFrame_Mode = 0;
+char BackupBytes[] = { 0xC3u, 0xC3u };
 
 void DrawDebugRectangle(float leftchars, float topchars, float numchars_horz, float numchars_vert)
 {
@@ -71,13 +74,26 @@ void RenderDeathPlanes(NJS_OBJECT* object)
 
 void UpdateKeys()
 {
-	int CursorPos = 14;
+	int KeysHeld = 0;
+	int CursorPosX1 = 14;
+	int CursorPosY1 = 21;
+	int CursorPosX2 = 14;
+	int CursorPosY2 = 23;
 	for (int i = 1; i < 256; i++) //exclude key 0 which is always pressed
 	{
 		if (KeyboardKeys[i].held)
 		{
-			DisplayDebugStringFormatted(NJM_LOCATION(CursorPos, 19), "%d ", i);
-			CursorPos += 3;
+			if (KeysHeld < 4)
+			{ 
+				DisplayDebugStringFormatted(NJM_LOCATION(CursorPosX1, CursorPosY1), "%03d", i);
+				CursorPosX1 += 4;
+			}
+			else
+			{
+				DisplayDebugStringFormatted(NJM_LOCATION(CursorPosX2, CursorPosY2), "%03d", i);
+				CursorPosX2 += 4;
+			}
+			KeysHeld++;
 		}
 	}
 }
@@ -85,6 +101,7 @@ void UpdateKeys()
 void UpdateButtons()
 {
 	std::string ButtonsString = "";
+	std::string PadString = "";
 	int CursorPos = 17;
 	if (ControllerPointers[0]->HeldButtons & Buttons_A)
 	{
@@ -118,7 +135,25 @@ void UpdateButtons()
 	{
 		ButtonsString += "START ";
 	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_Up)
+	{
+		PadString += "UP ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_Down)
+	{
+		PadString += "DOWN ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_Left)
+	{
+		PadString += "LEFT ";
+	}
+	if (ControllerPointers[0]->HeldButtons & Buttons_Right)
+	{
+		PadString += "RIGHT ";
+	}
+	if (PadString == "") PadString = "CENTER";
 	DisplayDebugStringFormatted(NJM_LOCATION(CursorPos, 12), ButtonsString.c_str());
+	DisplayDebugStringFormatted(NJM_LOCATION(18, 14), PadString.c_str());
 }
 
 void ScaleDebugFont(int scale)
@@ -142,7 +177,7 @@ void PlayerDebug()
 		DisplayDebugString(NJM_LOCATION(2, 1), "- PLAYER INFO UNAVAILABLE -");
 		return;
 	}
-	DrawDebugRectangle(1.75f, 0.75f, 25, 23);
+	DrawDebugRectangle(1.75f, 0.75f, 25, 26);
 	SetDebugFontColor(0xFF88FFAA);
 	DisplayDebugString(NJM_LOCATION(6, 1), "- PLAYER INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
@@ -153,14 +188,16 @@ void PlayerDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.y, (360.0f / 65535.0f) *(Uint16)EntityData1Ptrs[0]->Rotation.y);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.z, (360.0f / 65535.0f) *(Uint16)EntityData1Ptrs[0]->Rotation.z);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 11), "ACTION: %03d", EntityData1Ptrs[0]->Action);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "ANIM: %03d", CharObj2Ptrs[0]->AnimationThing.Index);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "FRAME: %.2f", CharObj2Ptrs[0]->AnimationThing.Frame);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "SPEED X: %.4f", CharObj2Ptrs[0]->Speed.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "SPEED Y: %.4f", CharObj2Ptrs[0]->Speed.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 17), "SPEED Z: %.4f", CharObj2Ptrs[0]->Speed.z);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "RINGS: %03d", Rings);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "LIVES: %03d", Lives);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "IDLE: %04d", CharObj2Ptrs[0]->IdleTime);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "STATUS: %X", EntityData1Ptrs[0]->Status);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "NEXT  : %X", EntityData1Ptrs[0]->NextAction);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "ANIM: %03d", CharObj2Ptrs[0]->AnimationThing.Index);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "FRAME: %.2f", CharObj2Ptrs[0]->AnimationThing.Frame);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 18), "SPEED X: %.4f", CharObj2Ptrs[0]->Speed.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "SPEED Y: %.4f", CharObj2Ptrs[0]->Speed.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "SPEED Z: %.4f", CharObj2Ptrs[0]->Speed.z);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 22), "RINGS: %03d", Rings);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 23), "LIVES: %03d", Lives);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 24), "IDLE: %04d", CharObj2Ptrs[0]->IdleTime);
 }
 
 void CameraDebug()
@@ -261,9 +298,9 @@ Sint32 __cdecl njSetTexture_Hax(NJS_TEXLIST* texlist)
 void InputDebug()
 {
 	ScaleDebugFont(16);
-	DrawDebugRectangle(1.75f, 0.75f, 29, 21);
+	DrawDebugRectangle(1.75f, 0.75f, 30.5f, 24.5f);
 	SetDebugFontColor(0xFF88FFAA);
-	DisplayDebugString(NJM_LOCATION(6, 1), "- CONTROLLER INFO -");
+	DisplayDebugString(NJM_LOCATION(7, 1), "- CONTROLLER INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "ANALOG1 X: %04d", ControllerPointers[0]->LeftStickX);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "ANALOG1 Y: %04d", ControllerPointers[0]->LeftStickY);
@@ -272,11 +309,12 @@ void InputDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "TRIGGER L: %03d", ControllerPointers[0]->LTriggerPressure);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "TRIGGER R: %03d", ControllerPointers[0]->RTriggerPressure);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "BUTTONS HELD:");
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "BUTTONS RAW: %08X", ControllerPointers[0]->HeldButtons);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "PAD DIRECTION:");
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "BUTTONS RAW: %08X", ControllerPointers[0]->HeldButtons);
 	SetDebugFontColor(0xFF88FFAA);
-	DisplayDebugString(NJM_LOCATION(7, 17), "- KEYBOARD INFO -");
+	DisplayDebugString(NJM_LOCATION(8, 19), "- KEYBOARD INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "KEYS HELD:");
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "KEYS HELD:");
 	njPushMatrix(0);
 	float FontScale = 1.0f;
 	if ((float)HorizontalResolution / (float)VerticalResolution > 1.33f) FontScale = floor((float)VerticalResolution / 480.0f) * 0.5f;
@@ -712,6 +750,57 @@ static void __cdecl PlayVoice_r(int a1)
 	original(a1);
 }
 
+static void __cdecl FreezeFrameFilth_r();
+static Trampoline FreezeFrameFilth_t(0x40C090, 0x40C096, FreezeFrameFilth_r);
+static void __cdecl FreezeFrameFilth_r()
+{
+	auto original = reinterpret_cast<decltype(FreezeFrameFilth_r)*>(FreezeFrameFilth_t.Target());
+	if (!FreezeFrame_Mode) original();
+	else if (FreezeFrame_Mode == 1)
+	{
+		original();
+		FreezeFrame_Mode = 2;
+	}
+	else if (FreezeFrame_Mode == 3)
+	{
+		original();
+	}
+}
+
+static const void* const PauseAllSoundsPtr = (void*)0x424320;
+static inline int PauseAllSounds(int a1, int a2, int a3)
+{
+	int result;
+	__asm
+	{
+		mov ebx, [a2]
+		mov ecx, [a1]
+		push ebp
+		mov ebp, [a3]
+		call PauseAllSoundsPtr
+		pop ebp
+		mov result, eax
+		
+	}
+	return result;
+}
+
+static const void* const UnpauseAllSoundsPtr = (void*)0x424380;
+static inline int UnpauseAllSounds(int volume_3d, int a2)
+{
+	int result;
+	__asm
+	{
+		mov ecx, [volume_3d]
+		push ebp
+		mov ebp, [a2]
+		call UnpauseAllSoundsPtr
+		pop ebp
+		mov result, eax
+	}
+	return result;
+}
+
 extern "C"
 {
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions &helperFunctions)
@@ -728,6 +817,7 @@ extern "C"
 		if (GetModuleHandle(L"DLCs_Main") == nullptr) WriteCall((void*)0x77E9E4, DrawDebugText_NoFiltering);
 		delete config;
 	}
+
 	__declspec(dllexport) void __cdecl OnInput()
 	{
 		if (KeyboardKeys[30].pressed) DebugSetting = 1; //1 key
@@ -780,7 +870,33 @@ extern "C"
 			if (CurrentLights[CurrentStageLight] == -1) CurrentStageLight = 0;
 		}
 		if (KeyboardKeys[19].pressed) CrashDebug = !CrashDebug; //P key
+		if ((GameState != 0 && KeyboardKeys[72].pressed && !FreezeFrame_Mode) || FreezeFrame_Mode == 3) //Pause/break
+		{
+			BackupBytes[0] = Byte1;
+			BackupBytes[1] = Byte2;
+			WriteData<1>((char*)0x78BA50, 0xC3u);
+			WriteData<1>((char*)0x78B880, 0xC3u);
+			FreezeFrame_Mode = 1;
+			FreezeFrame_Pressed = true;
+			PauseAllSounds(0,0,0);
+		}
+		if (GameState != 0 && KeyboardKeys[72].pressed && FreezeFrame_Mode && !FreezeFrame_Pressed) //Pause/break
+		{
+			WriteData<1>((char*)0x78BA50, BackupBytes[0]);
+			WriteData<1>((char*)0x78B880, BackupBytes[1]);
+			FreezeFrame_Mode = 0;
+			UnpauseAllSounds(0, 0);
+		}
+		if (GameState != 0 && KeyboardKeys[73].pressed) //Insert
+		{
+			WriteData<1>((char*)0x78BA50, BackupBytes[0]);
+			WriteData<1>((char*)0x78B880, BackupBytes[1]);
+			FreezeFrame_Mode = 3;
+			UnpauseAllSounds(0, 0);
+		}
+		FreezeFrame_Pressed = false;
 	}
+
 	__declspec(dllexport) void __cdecl OnFrame()
 	{
 		ScaleDebugFont(16);
