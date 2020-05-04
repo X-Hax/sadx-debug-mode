@@ -3,10 +3,15 @@
 #include "Trampoline.h"
 #include "Data.h"
 
+FunctionPointer(void, Cutscene_WaitForInput, (int a), 0x4314D0);
+FunctionPointer(void, DrawCollisionInfo, (CollisionInfo* collision), 0x79F4D0);
+FunctionPointer(void, DrawDebugCollision, (ObjectMaster* a1), 0x4DBCC0);
+
 int CurrentPalettes[]= { -1, -1, -1, -1, -1, -1 };
 int CurrentLights[] = { -1, -1, -1, -1, -1, -1 };
 int CurrentPalette = 0;
 int CurrentStageLight = 0;
+bool CollisionDebug = false;
 
 char DebugSetting = 0;
 bool CrashDebug = false;
@@ -801,10 +806,40 @@ static inline int UnpauseAllSounds(int volume_3d, int a2)
 	return result;
 }
 
+void DrawDebugModel(NJS_MODEL_SADX* a1)
+{
+	njColorBlendingMode(0, NJD_COLOR_BLENDING_SRCALPHA);
+	njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_INVSRCALPHA);
+	DrawVisibleModel_Queue(a1, QueuedModelFlagsB_SomeTextureThing);
+}
+
+static void __cdecl AddToCollisionListF_r(EntityData1* a1);
+static Trampoline AddToCollisionListF_t(0x41C280, 0x41C285, AddToCollisionListF_r);
+static void __cdecl AddToCollisionListF_r(EntityData1* a1)
+{
+	auto original = reinterpret_cast<decltype(AddToCollisionListF_r)*>(AddToCollisionListF_t.Target());
+	if (CollisionDebug && a1->CollisionInfo) DrawCollisionInfo(a1->CollisionInfo);
+	original(a1);
+}
+
 extern "C"
 {
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions &helperFunctions)
 	{
+		//Fix model rendering for debug collision shapes
+		WriteCall((void*)0x79EAC5, DrawDebugModel);
+		WriteCall((void*)0x79EC11, DrawDebugModel);
+		WriteCall((void*)0x79ED09, DrawDebugModel);
+		WriteCall((void*)0x79F01C, DrawDebugModel);
+		WriteCall((void*)0x79F17D, DrawDebugModel);
+		WriteCall((void*)0x79EE1F, DrawDebugModel);
+		WriteCall((void*)0x79EE76, DrawDebugModel);
+		WriteCall((void*)0x79EECE, DrawDebugModel);
+		WriteCall((void*)0x79F2CA, DrawDebugModel);
+		WriteCall((void*)0x79F349, DrawDebugModel);
+		WriteCall((void*)0x79F349, DrawDebugModel);
+		WriteCall((void*)0x79F3C8, DrawDebugModel);
+		WriteCall((void*)0x79F426, DrawDebugModel);
 		/*WriteData<1>((char*)0x780872, 0x02u); //Expand memory for debug string allocation
 		WriteData((int*)0x780897, 256); //Expand memory for debug string allocation
 		WriteData((int*)0x780892, 4096); //Expand memory for debug string allocation*/
@@ -830,6 +865,10 @@ extern "C"
 		if (KeyboardKeys[37].pressed) DebugSetting = 8; //8 key
 		if (KeyboardKeys[38].pressed) DebugSetting = 9; //9 key
 		if (KeyboardKeys[39].pressed) DebugSetting = 0; //0 key
+		if (ControllerPointers[0]->PressedButtons & Buttons_C || KeyboardKeys[6].pressed)
+		{
+			CollisionDebug = !CollisionDebug;
+		}
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && !(ControllerPointers[0]->HeldButtons & Buttons_A))
 		{
 			DebugSetting++;
@@ -889,8 +928,11 @@ extern "C"
 		}
 		if (GameState != 0 && KeyboardKeys[73].pressed) //Insert
 		{
-			WriteData<1>((char*)0x78BA50, BackupBytes[0]);
-			WriteData<1>((char*)0x78B880, BackupBytes[1]);
+			if (FreezeFrame_Mode)
+			{
+				WriteData<1>((char*)0x78BA50, BackupBytes[0]);
+				WriteData<1>((char*)0x78B880, BackupBytes[1]);
+			}
 			FreezeFrame_Mode = 3;
 			UnpauseAllSounds(0, 0);
 		}
