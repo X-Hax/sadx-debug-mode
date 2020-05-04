@@ -9,6 +9,7 @@ Debug Mode is a mod for Sonic Adventure DX PC (2004) that displays various debug
 3) Press P on the keyboard to enable Crash Log. This will log each texture list and object code change to the SADX Mod Loader log/console.
 4) Press Pause/Break on the keyboard the freeze and unfreeze the game. Press Insert to advance one frame forward.
 5) In the Sound Queue screen, press H on the keyboard to toggle between decimal, hexadecimal and soundbank representations of sound IDs. In the LS Palette and Stage Lights screens, press H on the keyboard to toggle between multiple LS Palette Data and Stage Light Data entries for the current stage.
+6) Press the C button on the controller or the C key on the keyboard to enable or disable collision data display.
 
 For better legibility enable the "Hide HUD" code in SADX Mod Manager before running the game with this mod.
 
@@ -25,6 +26,7 @@ Notes:
 5) Some transparent objects may flicker when using frame advance.
 6) Some debug text may not display properly when using frame advance.
 7) Pressing (as opposed to holding) buttons may not work correctly when using freeze frame/frame advance.
+8) Visual representation for player collision data is misrotated.
 
 **Related mods/tools**
 
