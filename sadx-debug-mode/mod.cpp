@@ -813,13 +813,33 @@ void DrawDebugModel(NJS_MODEL_SADX* a1)
 	DrawVisibleModel_Queue(a1, QueuedModelFlagsB_SomeTextureThing);
 }
 
+void DrawCollisionInfo_Player(CollisionInfo* a1)
+{
+	a1->Object->Data1->Rotation.y = -a1->Object->Data1->Rotation.y - 0x8000u;
+	DrawCollisionInfo(a1);
+	a1->Object->Data1->Rotation.y = -a1->Object->Data1->Rotation.y + 0x8000u;
+}
+
 static void __cdecl AddToCollisionListF_r(EntityData1* a1);
 static Trampoline AddToCollisionListF_t(0x41C280, 0x41C285, AddToCollisionListF_r);
 static void __cdecl AddToCollisionListF_r(EntityData1* a1)
 {
 	auto original = reinterpret_cast<decltype(AddToCollisionListF_r)*>(AddToCollisionListF_t.Target());
-	if (CollisionDebug && a1->CollisionInfo) DrawCollisionInfo(a1->CollisionInfo);
 	original(a1);
+	if (CollisionDebug)
+	{
+		if (
+			(a1 == EntityData1Ptrs[0] || 
+			a1 == EntityData1Ptrs[1] || 
+			a1 == EntityData1Ptrs[2] || 
+			a1 == EntityData1Ptrs[3] || 
+			a1 == EntityData1Ptrs[4] || 
+			a1 == EntityData1Ptrs[5] || 
+			a1 == EntityData1Ptrs[6] || 
+			a1 == EntityData1Ptrs[7] ) 
+			&& a1->CollisionInfo) DrawCollisionInfo_Player(a1->CollisionInfo);
+		else if (a1->CollisionInfo) DrawCollisionInfo(a1->CollisionInfo);
+	}
 }
 
 extern "C"

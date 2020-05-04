@@ -26,7 +26,6 @@ Notes:
 5) Some transparent objects may flicker when using frame advance.
 6) Some debug text may not display properly when using frame advance.
 7) Pressing (as opposed to holding) buttons may not work correctly when using freeze frame/frame advance.
-8) Visual representation for player collision data is misrotated.
 
 **Related mods/tools**
 
