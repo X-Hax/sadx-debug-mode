@@ -815,9 +815,10 @@ void DrawDebugModel(NJS_MODEL_SADX* a1)
 
 void DrawCollisionInfo_Player(CollisionInfo* a1)
 {
-	a1->Object->Data1->Rotation.y = -a1->Object->Data1->Rotation.y - 0x8000u;
+	Angle BackupRotation = a1->Object->Data1->Rotation.y;
+	a1->Object->Data1->Rotation.y = -a1->Object->Data1->Rotation.y + 0x4000u;
 	DrawCollisionInfo(a1);
-	a1->Object->Data1->Rotation.y = -a1->Object->Data1->Rotation.y + 0x8000u;
+	a1->Object->Data1->Rotation.y = BackupRotation;
 }
 
 static void __cdecl AddToCollisionListF_r(EntityData1* a1);
