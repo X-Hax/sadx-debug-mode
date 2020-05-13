@@ -772,40 +772,6 @@ static void __cdecl FreezeFrameFilth_r()
 	}
 }
 
-static const void* const PauseAllSoundsPtr = (void*)0x424320;
-static inline int PauseAllSounds(int a1, int a2, int a3)
-{
-	int result;
-	__asm
-	{
-		mov ebx, [a2]
-		mov ecx, [a1]
-		push ebp
-		mov ebp, [a3]
-		call PauseAllSoundsPtr
-		pop ebp
-		mov result, eax
-		
-	}
-	return result;
-}
-
-static const void* const UnpauseAllSoundsPtr = (void*)0x424380;
-static inline int UnpauseAllSounds(int volume_3d, int a2)
-{
-	int result;
-	__asm
-	{
-		mov ecx, [volume_3d]
-		push ebp
-		mov ebp, [a2]
-		call UnpauseAllSoundsPtr
-		pop ebp
-		mov result, eax
-	}
-	return result;
-}
-
 void DrawDebugModel(NJS_MODEL_SADX* a1)
 {
 	njColorBlendingMode(0, NJD_COLOR_BLENDING_SRCALPHA);
@@ -938,14 +904,14 @@ extern "C"
 			WriteData<1>((char*)0x78B880, 0xC3u);
 			FreezeFrame_Mode = 1;
 			FreezeFrame_Pressed = true;
-			PauseAllSounds(0,0,0);
+			PauseAllSounds(0);
 		}
 		if (GameState != 0 && KeyboardKeys[72].pressed && FreezeFrame_Mode && !FreezeFrame_Pressed) //Pause/break
 		{
 			WriteData<1>((char*)0x78BA50, BackupBytes[0]);
 			WriteData<1>((char*)0x78B880, BackupBytes[1]);
 			FreezeFrame_Mode = 0;
-			UnpauseAllSounds(0, 0);
+			UnpauseAllSounds(0);
 		}
 		if (GameState != 0 && KeyboardKeys[73].pressed) //Insert
 		{
@@ -955,7 +921,7 @@ extern "C"
 				WriteData<1>((char*)0x78B880, BackupBytes[1]);
 			}
 			FreezeFrame_Mode = 3;
-			UnpauseAllSounds(0, 0);
+			UnpauseAllSounds(0);
 		}
 		FreezeFrame_Pressed = false;
 	}
