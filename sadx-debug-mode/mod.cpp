@@ -733,6 +733,16 @@ void SoundBankInfoDebug()
 	SetDebugFontColor(0xFFBFBFBF);
 }
 
+static Sint32 __cdecl LoadPVM_r(const char* filename, NJS_TEXLIST* texlist);
+static Trampoline LoadPVM_t(0x77FEB0, 0x77FEB6, LoadPVM_r);
+static Sint32 __cdecl LoadPVM_r(const char* filename, NJS_TEXLIST* texlist)
+{
+	auto original = reinterpret_cast<decltype(LoadPVM_r)*>(LoadPVM_t.Target());
+	Sint32 result = original(filename, texlist);
+	PrintDebug("Loading PVM: %s result: %d\n", filename, result);
+	return result;
+}
+
 static void __cdecl LoadSoundList_r(signed int a1);
 static Trampoline LoadSoundList_t(0x4238E0, 0x4238E6, LoadSoundList_r);
 static void __cdecl LoadSoundList_r(signed int a1)
