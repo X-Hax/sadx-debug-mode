@@ -3762,7 +3762,7 @@ struct KeyboardKey
 DataArray(KeyboardKey, KeyboardKeys, 0x3B0E3E0, 256);
 DataPointer(KeyboardKey, Key_B, 0x03B0E3EF);
 DataArray(SoundEntry, SoundQueue, 0x3B292F8, 35);
-DataArray(EnvLightData, StageLights, 0x900E88, 277);
+DataPointer(EnvLightData*, StageLights, 0x40A8A2);
 DataPointer(int, CutsceneID, 0x3B2C570);
 DataPointer(char, CurrentCharacterSelection, 0x3B2A2FD);
 DataPointer(uint8_t, TextureFilterSettingForPoint_1, 0x0078B7C4);

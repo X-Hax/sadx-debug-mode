@@ -433,7 +433,7 @@ void FindStageLight()
 	}
 	for (int i = 0; i < 255; i++)
 	{
-		if (StageLightList[i].level == CurrentLevel && StageLightList[i].act == CurrentAct)
+		if (StageLights[i].level == CurrentLevel && StageLights[i].act == CurrentAct)
 		{
 			//PrintDebug("Adding stage light\n");
 			AddStageLight(i);
