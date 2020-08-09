@@ -431,7 +431,7 @@ void FindStageLight()
 	{
 		CurrentLights[q] = -1;
 	}
-	for (int i = 0; i < 277; i++)
+	for (int i = 0; i < 255; i++)
 	{
 		if (StageLightList[i].level == CurrentLevel && StageLightList[i].act == CurrentAct)
 		{
