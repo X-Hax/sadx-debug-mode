@@ -29,7 +29,7 @@ Notes:
 
 **Related mods/tools**
 
-SADX Mod Installer: http://www.moddb.com/mods/sadx-dreamcast-conversion/news/new-mod-installer-now-available1
+SADX Mod Installer: https://sadxmodinstaller.unreliable.network
 
 SADX Mod Loader (direct link): http://mm.reimuhakurei.net/sadxmods/SADXModLoader.7z
 
