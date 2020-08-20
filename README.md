@@ -32,9 +32,3 @@ Notes:
 SADX Mod Installer: https://sadxmodinstaller.unreliable.network
 
 SADX Mod Loader (direct link): http://mm.reimuhakurei.net/sadxmods/SADXModLoader.7z
-
-Dreamcast Conversion: https://github.com/PiKeyAr/sadx_dreamcast
-
-Keyboard Remapper: https://github.com/PiKeyAr/sadx-keyboard-remap
-
-HD GUI 2: https://github.com/PiKeyAr/sadx-hd-gui
