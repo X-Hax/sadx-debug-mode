@@ -12,6 +12,8 @@ int CurrentLights[] = { -1, -1, -1, -1, -1, -1 };
 int CurrentPalette = 0;
 int CurrentStageLight = 0;
 bool CollisionDebug = false;
+NJS_COLOR DebugFontColorBK;
+float DebugFontSizeBK;
 
 char DebugSetting = 0;
 bool CrashDebug = false;
@@ -23,6 +25,18 @@ int VoiceID = -1;
 bool FreezeFrame_Pressed = false;
 int FreezeFrame_Mode = 0;
 char BackupBytes[] = { 0xC3u, 0xC3u };
+
+void BackupDebugFontSettings()
+{
+	DebugFontColorBK = DebugFontColor;
+	DebugFontSizeBK = DebugFontSize;
+}
+
+void RestoreDebugFontSettings()
+{
+	DebugFontColor = DebugFontColorBK;
+	DebugFontSize = DebugFontSizeBK;
+}
 
 void DrawDebugRectangle(float leftchars, float topchars, float numchars_horz, float numchars_vert)
 {
@@ -43,21 +57,6 @@ void DrawDebugRectangle(float leftchars, float topchars, float numchars_horz, fl
 	else DrawRect_Queue(leftchars*FontScale*16.0f, topchars*FontScale*16.0f, numchars_horz*FontScale*16.0f, numchars_vert*FontScale*16.0f, 62041.496f, 0x7F0000FF, QueuedModelFlagsB_EnableZWrite);
 	njColorBlendingMode(0, NJD_COLOR_BLENDING_SRCALPHA);
 	njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_INVSRCALPHA);
-}
-
-void DrawDebugText_NoFiltering(NJS_QUAD_TEXTURE_EX *quad)
-{
-	uint8_t Backup1 = TextureFilterSettingForPoint_1;
-	uint8_t Backup2 = TextureFilterSettingForPoint_2;
-	uint8_t Backup3 = TextureFilterSettingForPoint_3;
-	WriteData((uint8_t*)0x0078B7C4, (uint8_t)0x01);
-	WriteData((uint8_t*)0x0078B7D8, (uint8_t)0x01);
-	WriteData((uint8_t*)0x0078B7EC, (uint8_t)0x01);
-	Direct3D_TextureFilterPoint();
-	Direct3D_DrawQuad(quad);
-	WriteData((uint8_t*)0x0078B7C4, Backup1);
-	WriteData((uint8_t*)0x0078B7D8, Backup2);
-	WriteData((uint8_t*)0x0078B7EC, Backup3);
 }
 
 void RenderDeathPlanes(NJS_OBJECT* object)
@@ -88,6 +87,9 @@ void UpdateKeys()
 	{
 		if (KeyboardKeys[i].held)
 		{
+			BackupDebugFontSettings();
+			SetDebugFontSize(16);
+			SetDebugFontColor(0xFFBFBFBF);
 			if (KeysHeld < 4)
 			{ 
 				DisplayDebugStringFormatted(NJM_LOCATION(CursorPosX1, CursorPosY1), "%03d", i);
@@ -99,6 +101,7 @@ void UpdateKeys()
 				CursorPosX2 += 4;
 			}
 			KeysHeld++;
+			RestoreDebugFontSettings();
 		}
 	}
 }
@@ -157,8 +160,12 @@ void UpdateButtons()
 		PadString += "RIGHT ";
 	}
 	if (PadString == "") PadString = "CENTER";
+	BackupDebugFontSettings();
+	SetDebugFontSize(16);
+	SetDebugFontColor(0xFFBFBFBF);
 	DisplayDebugStringFormatted(NJM_LOCATION(CursorPos, 12), ButtonsString.c_str());
 	DisplayDebugStringFormatted(NJM_LOCATION(18, 14), PadString.c_str());
+	RestoreDebugFontSettings();
 }
 
 void ScaleDebugFont(int scale)
@@ -846,7 +853,6 @@ extern "C"
 		const IniFile *config = new IniFile(std::string(path) + "\\config.ini");
 		EnableFontScaling = config->getBool("General", "EnableFontScaling", false);
 		DebugSetting = config->getInt("General", "DefaultPage", 0);
-		if (GetModuleHandle(L"DLCs_Main") == nullptr) WriteCall((void*)0x77E9E4, DrawDebugText_NoFiltering);
 		delete config;
 	}
 
@@ -938,6 +944,7 @@ extern "C"
 
 	__declspec(dllexport) void __cdecl OnFrame()
 	{
+		BackupDebugFontSettings();
 		ScaleDebugFont(16);
 		if (!MissedFrames)
 		{
@@ -963,6 +970,7 @@ extern "C"
 			DebugMode = 0;
 			if (EntityData1Ptrs[0] != nullptr) EntityData1Ptrs[0]->Action = 1;
 		}
+		RestoreDebugFontSettings();
 	}
 	__declspec(dllexport) ModInfo SADXModInfo = { ModLoaderVer };
 }
