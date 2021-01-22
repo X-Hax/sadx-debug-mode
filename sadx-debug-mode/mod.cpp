@@ -858,17 +858,17 @@ extern "C"
 
 	__declspec(dllexport) void __cdecl OnInput()
 	{
-		if (KeyboardKeys[30].pressed) DebugSetting = 1; //1 key
-		if (KeyboardKeys[31].pressed) DebugSetting = 2; //2 key
-		if (KeyboardKeys[32].pressed) DebugSetting = 3; //3 key
-		if (KeyboardKeys[33].pressed) DebugSetting = 4; //4 key
-		if (KeyboardKeys[34].pressed) DebugSetting = 5; //5 key
-		if (KeyboardKeys[35].pressed) DebugSetting = 6; //6 key
-		if (KeyboardKeys[36].pressed) DebugSetting = 7; //7 key
-		if (KeyboardKeys[37].pressed) DebugSetting = 8; //8 key
-		if (KeyboardKeys[38].pressed) DebugSetting = 9; //9 key
-		if (KeyboardKeys[39].pressed) DebugSetting = 0; //0 key
-		if (ControllerPointers[0]->PressedButtons & Buttons_C || KeyboardKeys[6].pressed)
+		if (KeyboardKeys[KEY_1].pressed) DebugSetting = 1;
+		if (KeyboardKeys[KEY_2].pressed) DebugSetting = 2;
+		if (KeyboardKeys[KEY_3].pressed) DebugSetting = 3;
+		if (KeyboardKeys[KEY_4].pressed) DebugSetting = 4;
+		if (KeyboardKeys[KEY_5].pressed) DebugSetting = 5; 
+		if (KeyboardKeys[KEY_6].pressed) DebugSetting = 6;
+		if (KeyboardKeys[KEY_7].pressed) DebugSetting = 7;
+		if (KeyboardKeys[KEY_8].pressed) DebugSetting = 8;
+		if (KeyboardKeys[KEY_9].pressed) DebugSetting = 9;
+		if (KeyboardKeys[KEY_0].pressed) DebugSetting = 0;
+		if (ControllerPointers[0]->PressedButtons & Buttons_C || KeyboardKeys[KEY_C].pressed)
 		{
 			CollisionDebug = !CollisionDebug;
 		}
@@ -898,21 +898,21 @@ extern "C"
 		}
 		if (DebugSetting == 6)
 		{
-			if (KeyboardKeys[11].pressed) DisplaySoundIDMode++; //H key
+			if (KeyboardKeys[KEY_H].pressed) DisplaySoundIDMode++;
 			if (DisplaySoundIDMode > 2) DisplaySoundIDMode = 0;
 		}
 		if (DebugSetting == 8)
 		{
-			if (KeyboardKeys[11].pressed) CurrentPalette++; //H key
+			if (KeyboardKeys[KEY_H].pressed) CurrentPalette++;
 			if (CurrentPalettes[CurrentPalette] == -1) CurrentPalette = 0;
 		}
 		if (DebugSetting == 9)
 		{
-			if (KeyboardKeys[11].pressed) CurrentStageLight++; //H key
+			if (KeyboardKeys[KEY_H].pressed) CurrentStageLight++;
 			if (CurrentLights[CurrentStageLight] == -1) CurrentStageLight = 0;
 		}
-		if (KeyboardKeys[19].pressed) CrashDebug = !CrashDebug; //P key
-		if ((GameState != 0 && KeyboardKeys[72].pressed && !FreezeFrame_Mode) || FreezeFrame_Mode == 3) //Pause/break
+		if (KeyboardKeys[KEY_P].pressed) CrashDebug = !CrashDebug;
+		if ((GameState != 0 && KeyboardKeys[KEY_PAUSEBREAK].pressed && !FreezeFrame_Mode) || FreezeFrame_Mode == 3)
 		{
 			BackupBytes[0] = Byte1;
 			BackupBytes[1] = Byte2;
@@ -922,14 +922,14 @@ extern "C"
 			FreezeFrame_Pressed = true;
 			PauseAllSounds(0);
 		}
-		if (GameState != 0 && KeyboardKeys[72].pressed && FreezeFrame_Mode && !FreezeFrame_Pressed) //Pause/break
+		if (GameState != 0 && KeyboardKeys[KEY_PAUSEBREAK].pressed && FreezeFrame_Mode && !FreezeFrame_Pressed)
 		{
 			WriteData<1>((char*)0x78BA50, BackupBytes[0]);
 			WriteData<1>((char*)0x78B880, BackupBytes[1]);
 			FreezeFrame_Mode = 0;
 			UnpauseAllSounds(0);
 		}
-		if (GameState != 0 && KeyboardKeys[73].pressed) //Insert
+		if (GameState != 0 && KeyboardKeys[KEY_INSERT].pressed)
 		{
 			if (FreezeFrame_Mode)
 			{
