@@ -3877,5 +3877,6 @@ DataPointer(uint8_t, TextureFilterSettingForPoint_3, 0x0078B7EC);
 DataPointer(int, CurrentCutsceneCode, 0x3B2C568);
 DataPointer(char, Byte1, 0x78BA50);
 DataPointer(char, Byte2, 0x78B880);
-
+DataPointer(int, FogToggle, 0x3ABDC6C);
+DataPointer(NJS_TEXLIST, DebugFontTexlist, 0x38A5CF8);
 #pragma warning(pop)

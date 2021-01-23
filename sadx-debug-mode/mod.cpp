@@ -6,12 +6,16 @@
 FunctionPointer(void, Cutscene_WaitForInput, (int a), 0x4314D0);
 FunctionPointer(void, DrawCollisionInfo, (CollisionInfo* collision), 0x79F4D0);
 FunctionPointer(void, DrawDebugCollision, (ObjectMaster* a1), 0x4DBCC0);
+FastcallFunctionPointer(void, stSetTexture, (int index), 0x0078D140);
 
 int CurrentPalettes[]= { -1, -1, -1, -1, -1, -1 };
 int CurrentLights[] = { -1, -1, -1, -1, -1, -1 };
 int CurrentPalette = 0;
 int CurrentStageLight = 0;
+int DebugMessageTimer = 0;
 bool CollisionDebug = false;
+bool TextureDebug = false;
+const char* DebugMessage;
 NJS_COLOR DebugFontColorBK;
 float DebugFontSizeBK;
 
@@ -826,6 +830,34 @@ static void __cdecl AddToCollisionListF_r(EntityData1* a1)
 	}
 }
 
+void SendMessage(const char* msg)
+{
+	DebugMessageTimer = 60;
+	DebugMessage = msg;
+}
+
+static void __cdecl stSetTexture_r(signed int a1);
+static Trampoline stSetTexture_t(0x78D140, 0x78D149, stSetTexture_r);
+static void __cdecl stSetTexture_r(signed int a1)
+{
+	auto original = reinterpret_cast<decltype(stSetTexture_r)*>(stSetTexture_t.Target());
+	if (TextureDebug && Direct3D_CurrentTexList != &DebugFontTexlist)
+		Direct3D_SetNullTexture();
+	else
+		original(a1);
+}
+
+static void __cdecl stSetTexture_Ocean_r(Uint32 a1);
+static Trampoline stSetTexture_Ocean_t(0x403090, 0x403095, stSetTexture_Ocean_r);
+static void __cdecl stSetTexture_Ocean_r(Uint32 a1)
+{
+	auto original = reinterpret_cast<decltype(stSetTexture_Ocean_r)*>(stSetTexture_Ocean_t.Target());
+	if (TextureDebug && Direct3D_CurrentTexList != &DebugFontTexlist)
+		Direct3D_SetNullTexture();
+	else
+		original(a1);
+}
+
 extern "C"
 {
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions &helperFunctions)
@@ -868,9 +900,20 @@ extern "C"
 		if (KeyboardKeys[KEY_8].pressed) DebugSetting = 8;
 		if (KeyboardKeys[KEY_9].pressed) DebugSetting = 9;
 		if (KeyboardKeys[KEY_0].pressed) DebugSetting = 0;
+		if (KeyboardKeys[KEY_T].pressed)
+		{
+			TextureDebug = !TextureDebug;
+			SendMessage(TextureDebug ? "TEXTURES: OFF" : "TEXTURES: ON ");
+		}
+		if (KeyboardKeys[KEY_F].pressed)
+		{
+			FogToggle = !FogToggle;
+			SendMessage(FogToggle ? "FOG: ON " : "FOG: OFF");
+		}
 		if (ControllerPointers[0]->PressedButtons & Buttons_C || KeyboardKeys[KEY_C].pressed)
 		{
 			CollisionDebug = !CollisionDebug;
+			SendMessage(CollisionDebug ? "COLLI DRAW: ON " : "COLLI DRAW: OFF");
 		}
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && !(ControllerPointers[0]->HeldButtons & Buttons_A))
 		{
@@ -890,6 +933,7 @@ extern "C"
 				DebugMode = 1;
 				DeathPlanesEnabled = 1;
 			}
+			SendMessage(DebugMode ? "DEBUG MODE: ON " : "DEBUG MODE: OFF");
 		}
 		if (DebugSetting == 4)
 		{
@@ -953,6 +997,14 @@ extern "C"
 				SetDebugFontColor(0xFFFF0000);
 				DisplayDebugStringFormatted(NJM_LOCATION(0, 0), "CRASH LOG ON");
 				SetDebugFontColor(0xFFBFBFBF);
+			}
+			if (DebugMessageTimer && DebugMessage != NULL)
+			{
+				SetDebugFontColor(0xFFBFBFBF);
+				int DebugRightPos = (int)((float)HorizontalResolution / DebugFontSize);
+				DisplayDebugStringFormatted(NJM_LOCATION(DebugRightPos - strlen(DebugMessage), 0), DebugMessage);
+				SetDebugFontColor(0xFFBFBFBF);
+				DebugMessageTimer--;
 			}
 			if (DebugSetting == 1) GameDebug();
 			if (DebugSetting == 2) PlayerDebug();
