@@ -40,6 +40,10 @@ Notes:
 6) Some debug text may not display properly when using frame advance.
 7) Pressing (as opposed to holding) buttons may not work correctly when using freeze frame/frame advance.
 
+**Credits**
+
+[Speeps](https://twitter.com/SPEEPSHighway) for providing the original free camera code that was adapted for this mod
+
 **Related mods/tools**
 
 SADX Mod Installer: https://sadxmodinstaller.unreliable.network
