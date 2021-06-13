@@ -2,6 +2,8 @@
 #include "IniFile.hpp"
 #include "Trampoline.h"
 #include "Data.h"
+#include "SADXFunctionsNew.h"
+#include "FreeCam.h"
 
 FunctionPointer(void, Cutscene_WaitForInput, (int a), 0x4314D0);
 FunctionPointer(void, DrawCollisionInfo, (CollisionInfo* collision), 0x79F4D0);
@@ -16,6 +18,8 @@ int DebugMessageTimer = 0;
 bool CollisionDebug = false;
 bool TextureDebug = false;
 const char* DebugMessage;
+char DebugMsgBuffer[32];
+bool FreeCamEnabled = false;
 NJS_COLOR DebugFontColorBK;
 float DebugFontSizeBK;
 
@@ -29,6 +33,7 @@ int VoiceID = -1;
 bool FreezeFrame_Pressed = false;
 int FreezeFrame_Mode = 0;
 char BackupBytes[] = { 0xC3u, 0xC3u };
+std::string FreeCamModeStrings[] = {"OFF", "LOOK", "MOVE", "ZOOM", "LOCKED"};
 
 void BackupDebugFontSettings()
 {
@@ -226,7 +231,7 @@ void CameraDebug()
 		return;
 	}
 	SetDebugFontColor(0xFF88FFAA);
-	DrawDebugRectangle(1.75f, 0.75f, 23, 18);
+	DrawDebugRectangle(1.75f, 0.75f, 23, 21);
 	DisplayDebugString(NJM_LOCATION(5, 1), "- CAMERA INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "X: %.2f", Camera_Data1->Position.x);
@@ -240,6 +245,8 @@ void CameraDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "FRAME: %.2f", Camera_CurrentActionFrame);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "MODE: %d", CameraType[3]);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "FLAGS: %X", camera_flags);	
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 18), "FREE CAM: %s", FreeCamModeStrings[FreeCamMode].c_str());
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "CAM SPEED: %.2f", FreeCamSpeed);
 }
 
 void FogDebug()
@@ -811,12 +818,12 @@ void DrawCollisionInfo_Player(CollisionInfo* a1)
 static void __cdecl AddToCollisionListF_r(EntityData1* a1);
 static Trampoline AddToCollisionListF_t(0x41C280, 0x41C285, AddToCollisionListF_r);
 static void __cdecl AddToCollisionListF_r(EntityData1* a1)
-{
-	auto original = reinterpret_cast<decltype(AddToCollisionListF_r)*>(AddToCollisionListF_t.Target());
-	original(a1);
-	if (CollisionDebug)
 	{
-		if (
+		auto original = reinterpret_cast<decltype(AddToCollisionListF_r)*>(AddToCollisionListF_t.Target());
+		original(a1);
+		if (CollisionDebug)
+		{
+			if (
 			(a1 == EntityData1Ptrs[0] || 
 			a1 == EntityData1Ptrs[1] || 
 			a1 == EntityData1Ptrs[2] || 
@@ -830,7 +837,7 @@ static void __cdecl AddToCollisionListF_r(EntityData1* a1)
 	}
 }
 
-void SendMessage(const char* msg)
+void SendDebugMessage(const char* msg)
 {
 	DebugMessageTimer = 60;
 	DebugMessage = msg;
@@ -887,9 +894,10 @@ extern "C"
 		DebugSetting = config->getInt("General", "DefaultPage", 0);
 		delete config;
 	}
-
+	
 	__declspec(dllexport) void __cdecl OnInput()
 	{
+		// Info panels
 		if (KeyboardKeys[KEY_1].pressed) DebugSetting = 1;
 		if (KeyboardKeys[KEY_2].pressed) DebugSetting = 2;
 		if (KeyboardKeys[KEY_3].pressed) DebugSetting = 3;
@@ -900,26 +908,31 @@ extern "C"
 		if (KeyboardKeys[KEY_8].pressed) DebugSetting = 8;
 		if (KeyboardKeys[KEY_9].pressed) DebugSetting = 9;
 		if (KeyboardKeys[KEY_0].pressed) DebugSetting = 0;
+		// Texture toggle
 		if (KeyboardKeys[KEY_T].pressed)
 		{
 			TextureDebug = !TextureDebug;
-			SendMessage(TextureDebug ? "TEXTURES: OFF" : "TEXTURES: ON ");
+			SendDebugMessage(TextureDebug ? "TEXTURES: OFF" : "TEXTURES: ON ");
 		}
+		// Fog toggle
 		if (KeyboardKeys[KEY_F].pressed)
 		{
 			FogToggle = !FogToggle;
-			SendMessage(FogToggle ? "FOG: ON " : "FOG: OFF");
+			SendDebugMessage(FogToggle ? "FOG: ON " : "FOG: OFF");
 		}
+		// Collision toggle
 		if (ControllerPointers[0]->PressedButtons & Buttons_C || KeyboardKeys[KEY_C].pressed)
 		{
 			CollisionDebug = !CollisionDebug;
-			SendMessage(CollisionDebug ? "COLLI DRAW: ON " : "COLLI DRAW: OFF");
+			SendDebugMessage(CollisionDebug ? "COLLI DRAW: ON " : "COLLI DRAW: OFF");
 		}
+		// Cycle info panels
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && !(ControllerPointers[0]->HeldButtons & Buttons_A))
 		{
 			DebugSetting++;
 			if (DebugSetting > 9) DebugSetting = 0;
 		}
+		// Vanilla Debug Mode
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && ControllerPointers[0]->HeldButtons & Buttons_A)
 		{
 			if (DebugMode)
@@ -933,29 +946,32 @@ extern "C"
 				DebugMode = 1;
 				DeathPlanesEnabled = 1;
 			}
-			SendMessage(DebugMode ? "DEBUG MODE: ON " : "DEBUG MODE: OFF");
+			SendDebugMessage(DebugMode ? "DEBUG MODE: ON " : "DEBUG MODE: OFF");
 		}
-		if (DebugSetting == 4)
+		// Update info panels
+		switch (DebugSetting)
 		{
+			// Input
+		case 4:
 			UpdateKeys();
 			UpdateButtons();
-		}
-		if (DebugSetting == 6)
-		{
+			break;
+			// Sound
+		case 6:
 			if (KeyboardKeys[KEY_H].pressed) DisplaySoundIDMode++;
 			if (DisplaySoundIDMode > 2) DisplaySoundIDMode = 0;
-		}
-		if (DebugSetting == 8)
-		{
+			// LS Palette
+		case 8:
 			if (KeyboardKeys[KEY_H].pressed) CurrentPalette++;
 			if (CurrentPalettes[CurrentPalette] == -1) CurrentPalette = 0;
-		}
-		if (DebugSetting == 9)
-		{
+			// Stage Lights
+		case 9:
 			if (KeyboardKeys[KEY_H].pressed) CurrentStageLight++;
 			if (CurrentLights[CurrentStageLight] == -1) CurrentStageLight = 0;
 		}
+		// Crash log toggle
 		if (KeyboardKeys[KEY_P].pressed) CrashDebug = !CrashDebug;
+		// Freeze frame/frame advance toggle
 		if ((GameState != 0 && KeyboardKeys[KEY_PAUSEBREAK].pressed && !FreezeFrame_Mode) || FreezeFrame_Mode == 3)
 		{
 			BackupBytes[0] = Byte1;
@@ -984,12 +1000,44 @@ extern "C"
 			UnpauseAllSounds(0);
 		}
 		FreezeFrame_Pressed = false;
+		// Free cam toggle
+		if (KeyboardKeys[KEY_Y].pressed)
+		{
+			FreeCamEnabled = !FreeCamEnabled;
+			ShowCursor(true);
+			SendDebugMessage(FreeCamEnabled ? "FREE CAMERA: ON " : "FREE CAMERA: OFF");
+			// Center cursor first to avoid jittering after turning it on
+			if (FreeCamEnabled)
+			{
+				while (ShowCursor(false) >= 0);
+				int w = GetSystemMetrics(SM_CXSCREEN);
+				int h = GetSystemMetrics(SM_CYSCREEN);
+				SetCursorPos(w / 2, h / 2);
+			}
+		}
+		// Increase free cam speed
+		if (KeyboardKeys[KEY_NUM_ADD].held)
+		{
+			FreeCamSpeed = min(5.0f, FreeCamSpeed + 0.01f);
+			sprintf_s(DebugMsgBuffer, "FREE CAM SPEED: %.02f", FreeCamSpeed);
+			SendDebugMessage(DebugMsgBuffer);
+		}
+		// Decrease free cam speed
+		if (KeyboardKeys[KEY_NUM_SUBTRACT].held)
+		{
+			FreeCamSpeed = max(0.1f, FreeCamSpeed - 0.01f);
+			sprintf_s(DebugMsgBuffer, "FREE CAM SPEED: %.02f", FreeCamSpeed);
+			SendDebugMessage(DebugMsgBuffer);
+		}
+		FreeCam_OnInput();
 	}
 
 	__declspec(dllexport) void __cdecl OnFrame()
 	{
+		// Set up font
 		BackupDebugFontSettings();
 		ScaleDebugFont(16);
+		// Display data
 		if (!MissedFrames)
 		{
 			if (CrashDebug)
@@ -1006,23 +1054,30 @@ extern "C"
 				SetDebugFontColor(0xFFBFBFBF);
 				DebugMessageTimer--;
 			}
-			if (DebugSetting == 1) GameDebug();
-			if (DebugSetting == 2) PlayerDebug();
-			if (DebugSetting == 3) CameraDebug();
-			if (DebugSetting == 4) InputDebug();
-			if (DebugSetting == 5) FogDebug();
-			if (DebugSetting == 6) SoundDebug();
-			if (DebugSetting == 7) SoundBankInfoDebug();
-			if (DebugSetting == 8) LSPaletteDebug();
-			if (DebugSetting == 9) StageLightDebug();
+			switch (DebugSetting)
+			{
+			case 1: GameDebug(); break;
+			case 2: PlayerDebug(); break;
+			case 3: CameraDebug(); break;
+			case 4: InputDebug(); break;
+			case 5: FogDebug(); break;
+			case 6: SoundDebug(); break;
+			case 7: SoundBankInfoDebug(); break;
+			case 8: LSPaletteDebug(); break;
+			case 9: StageLightDebug(); break;
+			}
 		}
+		// Reset stuff after character dies etc.
 		if (DebugMode && (GameState == 7 || GameState == 3 || GameState == 4))
 		{
 			DeathPlanesEnabled = -1;
 			DebugMode = 0;
 			if (EntityData1Ptrs[0] != nullptr) EntityData1Ptrs[0]->Action = 1;
 		}
+		// Restore font setting after finishing drawing
 		RestoreDebugFontSettings();
+		// Free camera stuff
+		FreeCam_OnFrame();
 	}
 	__declspec(dllexport) ModInfo SADXModInfo = { ModLoaderVer };
 }
