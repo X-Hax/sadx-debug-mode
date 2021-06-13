@@ -10,6 +10,8 @@ long double FreeCamMoveY;
 POINT MouseCursorPosition;
 bool FreeCamLockCheck = false;
 
+void SendDebugMessage(const char* msg);
+
 enum FreeCamModes
 {
 	Camera_None = 0,
@@ -31,9 +33,15 @@ void FreeCam_OnInput()
 		if (!FreeCamLockCheck)
 		{
 			if (FreeCamMode != Camera_Lock)
+			{
 				FreeCamMode = Camera_Lock;
+				SendDebugMessage("FREE CAM: LOCKED");
+			}
 			else
+			{
 				FreeCamMode = Camera_Look;
+				SendDebugMessage("FREE CAM: UNLOCKED");
+			}
 			FreeCamLockCheck = true;
 		}
 	}
