@@ -12,8 +12,19 @@ Debug Mode is a mod for Sonic Adventure DX PC (2004) that displays various debug
 6) Press the C button on the controller or the C key on the keyboard to enable or disable collision data display.
 7) Press T to toggle textures.
 8) Press F to toggle fog.
+9) Press Y to toggle free camera mode (see below for details).
 
 For better legibility enable the "Hide HUD" code in SADX Mod Manager before running the game with this mod.
+
+**Using the free camera mode**
+
+When the free camera mode is enabled, you can use the mouse to move the camera around. The control scheme is similar to the one used in 3D editors in [SA Tools](https://github.com/sonicretro/sa_tools).
+- Move the mouse to rotate the camera.
+- Hold Left Shift and move the mouse to move the camera.
+- Hold Control and move the mouse up and down to zoom in and out.
+- Press both Left Shift and Control to lock the camera in place. Press them again to unlock it.
+- Press Numpad + and Numpad - to change camera speed.
+- Press Y to re-enable vanilla camera. It will remain locked in place until the character touches a camera trigger.
 
 **Using the vanilla debug mode**
 
