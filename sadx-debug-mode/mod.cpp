@@ -37,6 +37,13 @@ int FreezeFrame_Mode = 0;
 char BackupBytes[] = { 0xC3u, 0xC3u };
 std::string FreeCamModeStrings[] = {"OFF", "LOOK", "MOVE", "ZOOM", "LOCKED"};
 
+// White texture for texture override
+unsigned __int8 whitetexturedata[6144];
+NJS_TEXINFO whitetexturetexinfo;
+NJS_TEXNAME whitetextures[1];
+NJS_TEXLIST whitetexturetexlist = {arrayptrandlength(whitetextures)};
+NJS_TEXMEMLIST whitetexturetexmemlist;
+
 void BackupDebugFontSettings()
 {
 	DebugFontColorBK = DebugFontColor;
@@ -851,10 +858,11 @@ static void __cdecl stSetTexture_r(signed int a1)
 {
 	auto original = reinterpret_cast<decltype(stSetTexture_r)*>(stSetTexture_t.Target());
 	if (TextureDebug && Direct3D_CurrentTexList != &DebugFontTexlist)
-		Direct3D_SetNullTexture();
+		Direct3D_SetNJSTexture(TexMemList_PixelFormat(&whitetexturetexinfo, 454535454));
 	else
 		original(a1);
 }
+
 
 static void __cdecl stSetTexture_Ocean_r(Uint32 a1);
 static Trampoline stSetTexture_Ocean_t(0x403090, 0x403095, stSetTexture_Ocean_r);
@@ -862,15 +870,32 @@ static void __cdecl stSetTexture_Ocean_r(Uint32 a1)
 {
 	auto original = reinterpret_cast<decltype(stSetTexture_Ocean_r)*>(stSetTexture_Ocean_t.Target());
 	if (TextureDebug && Direct3D_CurrentTexList != &DebugFontTexlist)
-		Direct3D_SetNullTexture();
+		Direct3D_SetNJSTexture(TexMemList_PixelFormat(&whitetexturetexinfo, 454535454));
 	else
 		original(a1);
+}
+
+// White texture for compatibility with Lantern when textures are disabled
+static void InitializeWhiteTexture()
+{
+	whitetexturedata[0] = 0xFF;
+	whitetexturedata[1] = 0xFF;
+	whitetexturedata[2] = 0xFF;
+	whitetexturedata[3] = 0xFF;
+	whitetexturedata[4] = 0xFF;
+	whitetexturedata[5] = 0xFF;
+	whitetexturedata[6] = 0xFF;
+	whitetexturedata[7] = 0xFF;
+	njSetTextureInfo(&whitetexturetexinfo, (Uint16*)&whitetexturedata, NJD_TEXFMT_VQ | NJD_TEXFMT_RGB_565, 128, 128);
+	njSetTextureNameEx(whitetextures, &whitetexturetexinfo, (void*)0xFFFFFFFE, NJD_TEXATTR_GLOBALINDEX | NJD_TEXATTR_TYPE_MEMORY);
+	whitetextures[0].texaddr = (Uint32)TexMemList_PixelFormat(&whitetexturetexinfo, 237542221);
 }
 
 extern "C"
 {
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions &helperFunctions)
 	{
+		InitializeWhiteTexture();
 		//Fix model rendering for debug collision shapes
 		WriteCall((void*)0x79EAC5, DrawDebugModel);
 		WriteCall((void*)0x79EC11, DrawDebugModel);
