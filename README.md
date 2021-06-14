@@ -13,6 +13,7 @@ Debug Mode is a mod for Sonic Adventure DX PC (2004) that displays various debug
 7) Press T to toggle textures.
 8) Press F to toggle fog.
 9) Press Y to toggle free camera mode (see below for details).
+10) Press END to toggle the speed hack. When the speed hack is enabled, press Page Up and Page Down to control how fast the game runs. Note: the game cannot run slower than its original speed.
 
 For better legibility enable the "Hide HUD" code in SADX Mod Manager before running the game with this mod.
 
