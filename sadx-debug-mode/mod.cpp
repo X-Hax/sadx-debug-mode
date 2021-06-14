@@ -15,6 +15,8 @@ int CurrentLights[] = { -1, -1, -1, -1, -1, -1 };
 int CurrentPalette = 0;
 int CurrentStageLight = 0;
 int DebugMessageTimer = 0;
+bool SpeedHack = false;
+int FrameIncrementCurrent = 1;
 bool CollisionDebug = false;
 bool TextureDebug = false;
 const char* DebugMessage;
@@ -1030,6 +1032,27 @@ extern "C"
 			SendDebugMessage(DebugMsgBuffer);
 		}
 		FreeCam_OnInput();
+		// Speed Hack
+		if (KeyboardKeys[KEY_END].pressed)
+		{
+			SpeedHack = !SpeedHack;
+			SendDebugMessage(SpeedHack ? "SPEED HACK: ON" : "SPEED HACK: OFF");
+			if (!SpeedHack && FrameIncrementCurrent != 1)
+			{
+				FrameIncrement = FrameIncrementCurrent = 1;
+			}
+		}
+		if (KeyboardKeys[KEY_PAGEUP].pressed)
+		{
+			FrameIncrementCurrent += 1;
+			SendDebugMessage("GAME SPEED UP");
+		}
+		else if (KeyboardKeys[KEY_PAGEDOWN].pressed)
+		{
+			FrameIncrementCurrent = max(1, FrameIncrementCurrent - 1);
+			SendDebugMessage("GAME SPEED DOWN");
+		}
+
 	}
 
 	__declspec(dllexport) void __cdecl OnFrame()
@@ -1037,6 +1060,9 @@ extern "C"
 		// Set up font
 		BackupDebugFontSettings();
 		ScaleDebugFont(16);
+		// Apply speed hack
+		if (SpeedHack)
+			FrameIncrement = FrameIncrementCurrent;
 		// Display data
 		if (!MissedFrames)
 		{
