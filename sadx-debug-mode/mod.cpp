@@ -852,17 +852,13 @@ void SendDebugMessage(const char* msg)
 	DebugMessage = msg;
 }
 
-static void __cdecl stSetTexture_r(signed int a1);
-static Trampoline stSetTexture_t(0x78D140, 0x78D149, stSetTexture_r);
-static void __cdecl stSetTexture_r(signed int a1)
+void __fastcall SetTextureHack(int index)
 {
-	auto original = reinterpret_cast<decltype(stSetTexture_r)*>(stSetTexture_t.Target());
 	if (TextureDebug && Direct3D_CurrentTexList != &DebugFontTexlist)
 		Direct3D_SetNJSTexture(TexMemList_PixelFormat(&whitetexturetexinfo, 454535454));
 	else
-		original(a1);
+		stSetTexture(index);
 }
-
 
 static void __cdecl stSetTexture_Ocean_r(Uint32 a1);
 static Trampoline stSetTexture_Ocean_t(0x403090, 0x403095, stSetTexture_Ocean_r);
@@ -920,6 +916,12 @@ extern "C"
 		EnableFontScaling = config->getBool("General", "EnableFontScaling", false);
 		DebugSetting = config->getInt("General", "DefaultPage", 0);
 		delete config;
+		WriteJump((void*)0x77DDFD, SetTextureHack);
+		WriteCall((void*)0x77E36C, SetTextureHack);
+		WriteCall((void*)0x784A47, SetTextureHack);
+		WriteCall((void*)0x78A382, SetTextureHack);
+		WriteCall((void*)0x78A589, SetTextureHack);
+		WriteCall((void*)0x78ECE3, SetTextureHack);
 	}
 	
 	__declspec(dllexport) void __cdecl OnInput()
