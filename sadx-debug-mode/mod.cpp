@@ -1033,12 +1033,11 @@ extern "C"
 		if (KeyboardKeys[KEY_Y].pressed)
 		{
 			FreeCamEnabled = !FreeCamEnabled;
-			ShowCursor(true);
+			while (ShowCursor(true) < 0); // Increase cursor visibility until it shows
 			SendDebugMessage(FreeCamEnabled ? "FREE CAMERA: ON " : "FREE CAMERA: OFF");
 			// Center cursor first to avoid jittering after turning it on
 			if (FreeCamEnabled)
 			{
-				while (ShowCursor(false) >= 0);
 				int w = GetSystemMetrics(SM_CXSCREEN);
 				int h = GetSystemMetrics(SM_CYSCREEN);
 				SetCursorPos(w / 2, h / 2);

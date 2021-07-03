@@ -1,8 +1,10 @@
 #include <SADXModLoader.h>
+#include <Trampoline.h>
 #include "FreeCam.h"
 
 // Speeps' MemeMaker used for reference
 
+bool FreeCamPause = false;
 int FreeCamMode = 0;
 float FreeCamSpeed = 2.0f;
 long double FreeCamMoveX;
@@ -23,10 +25,10 @@ enum FreeCamModes
 
 void FreeCam_OnInput()
 {
-	// Stop if free camera mode is disabled or camera data is unavailable
-	if (!FreeCamEnabled || Camera_Data1 == NULL)
+	// Stop if free camera mode is disabled, the game is paused/inactive or camera data is unavailable
+	if (!FreeCamEnabled || Camera_Data1 == NULL || FreeCamPause || IsGamePaused())
 		return;
-
+	while (ShowCursor(false) >= 0); // Decrease cursor view value until it disappears
 	// Toggle camera lock
 	if (GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_LSHIFT) & 0x8000)
 	{
@@ -111,6 +113,31 @@ void FreeCam_OnInput()
 		}
 		break;
 	}
+}
+
+static void __cdecl PauseMusic_r();
+static Trampoline PauseMusic_t(0x40D060, 0x40D065, PauseMusic_r);
+static void __cdecl PauseMusic_r()
+{
+	FreeCamPause = true;
+	auto original = reinterpret_cast<decltype(PauseMusic_r)*>(PauseMusic_t.Target());
+	original();
+}
+
+static void __cdecl ResumeMusic_r();
+static Trampoline ResumeMusic_t(0x40D0A0, 0x40D0A5, ResumeMusic_r);
+static void __cdecl ResumeMusic_r()
+{
+	FreeCamPause = false;
+	if (FreeCamEnabled)
+	{
+		// Center mouse cursor to avoid jittering
+		int w = GetSystemMetrics(SM_CXSCREEN);
+		int h = GetSystemMetrics(SM_CYSCREEN);
+		SetCursorPos(w / 2, h / 2);
+	}
+	auto original = reinterpret_cast<decltype(ResumeMusic_r)*>(ResumeMusic_t.Target());
+	original();
 }
 
 void FreeCam_OnFrame()
