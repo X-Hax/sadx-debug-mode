@@ -33,13 +33,12 @@ This is SADX' built-in debug mode (what's left of it). Collision objects are vis
 When this mode is enabled, you can move the character freely through any obstacles. Use the analog stick to position the character on the X and Z plane. Hold the X button to move the character up and down.
 
 Notes:
-1) Keyboard-based functionality will not work when the Input mod is enabled.
-2) Vanilla debug mode is unavailable for Gamma. 
-3) For Tails and Big it will display collision objects but free movement will not be available.
-4) The information in LS Palette and Stage Lights screens is irrelevant when using Lantern Engine.
-5) Some transparent objects may flicker when using frame advance.
-6) Some debug text may not display properly when using frame advance.
-7) Pressing (as opposed to holding) buttons may not work correctly when using freeze frame/frame advance.
+1) Vanilla debug mode is unavailable for Gamma. 
+2) For Tails and Big it will display collision objects but free movement will not be available.
+3) The information in LS Palette and Stage Lights screens is irrelevant when using Lantern Engine.
+4) Some transparent objects may flicker when using frame advance.
+5) Some debug text may not display properly when using frame advance.
+6) Pressing (as opposed to holding) buttons may not work correctly when using freeze frame/frame advance.
 
 **Credits**
 
