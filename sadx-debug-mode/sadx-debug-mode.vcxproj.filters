@@ -21,12 +21,18 @@
     <ClCompile Include="FreeCam.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FreeMovements.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Data.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FreeCam.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FreeMovements.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

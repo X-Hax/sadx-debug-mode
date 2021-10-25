@@ -4,6 +4,7 @@
 #include "Data.h"
 #include "SADXFunctionsNew.h"
 #include "FreeCam.h"
+#include "FreeMovements.h"
 
 FunctionPointer(void, Cutscene_WaitForInput, (int a), 0x4314D0);
 FunctionPointer(void, DrawCollisionInfo, (CollisionInfo* collision), 0x79F4D0);
@@ -922,6 +923,7 @@ extern "C"
 		WriteCall((void*)0x78A382, SetTextureHack);
 		WriteCall((void*)0x78A589, SetTextureHack);
 		WriteCall((void*)0x78ECE3, SetTextureHack);
+		init_FreeMovements();
 	}
 	
 	__declspec(dllexport) void __cdecl OnInput()
@@ -970,7 +972,7 @@ extern "C"
 				DeathPlanesEnabled = -1;
 				if (EntityData1Ptrs[0] != nullptr) EntityData1Ptrs[0]->Action = 1;
 			}
-			else if (CurrentCharacter != Characters_Gamma && GameMode != GameModes_Menu)
+			else if (GameMode != GameModes_Menu)
 			{
 				DebugMode = 1;
 				DeathPlanesEnabled = 1;
