@@ -32,6 +32,7 @@ bool EnableFontScaling = false;
 signed char DeathPlanesEnabled = -1;
 int DisplaySoundIDMode = 0;
 int CurTexList_Current = 0;
+bool AngleHexadecimal = false;
 int VoiceID = -1;
 bool FreezeFrame_Pressed = false;
 int FreezeFrame_Mode = 0;
@@ -215,9 +216,18 @@ void PlayerDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "X: %.2f", EntityData1Ptrs[0]->Position.x);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "Y: %.2f", EntityData1Ptrs[0]->Position.y);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "Z: %.2f", EntityData1Ptrs[0]->Position.z);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.x, (360.0f / 65535.0f) *(Uint16)EntityData1Ptrs[0]->Rotation.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.y, (360.0f / 65535.0f) *(Uint16)EntityData1Ptrs[0]->Rotation.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.z, (360.0f / 65535.0f) *(Uint16)EntityData1Ptrs[0]->Rotation.z);
+	if (AngleHexadecimal)
+	{
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %04X / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.x, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.x);
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %04X / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.y, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.y);
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %04X / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.z, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.z);
+	}
+	else
+	{
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.x, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.x);
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.y, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.y);
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.z, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.z);
+	}
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 11), "ACTION: %03d", EntityData1Ptrs[0]->Action);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "STATUS: %X", EntityData1Ptrs[0]->Status);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "NEXT  : %X", EntityData1Ptrs[0]->NextAction);
@@ -247,10 +257,20 @@ void CameraDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "X: %.2f", Camera_Data1->Position.x);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "Y: %.2f", Camera_Data1->Position.y);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "Z: %.2f", Camera_Data1->Position.z);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.x, (360.0f / 65535.0f) *(Uint16)Camera_Data1->Rotation.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.y, (360.0f / 65535.0f) *(Uint16)Camera_Data1->Rotation.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.z, (360.0f / 65535.0f) *(Uint16)Camera_Data1->Rotation.z);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "HZFOV: %06d / %03.0f", (Uint16)HorizontalFOV_BAMS, (360.0f / 65535.0f) *(Uint16)HorizontalFOV_BAMS);
+	if (AngleHexadecimal)
+	{
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %04X / %03.0f", (Uint16)Camera_Data1->Rotation.x, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.x);
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %04X / %03.0f", (Uint16)Camera_Data1->Rotation.y, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.y);
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %04X / %03.0f", (Uint16)Camera_Data1->Rotation.z, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.z);
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "HZFOV: %04X / %03.0f", (Uint16)HorizontalFOV_BAMS, (360.0f / 65535.0f) * (Uint16)HorizontalFOV_BAMS);
+	}
+	else
+	{
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.x, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.x);
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.y, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.y);
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.z, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.z);
+		DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "HZFOV: %06d / %03.0f", (Uint16)HorizontalFOV_BAMS, (360.0f / 65535.0f) * (Uint16)HorizontalFOV_BAMS);
+	}
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "ACTION: %02d", Camera_Data1->Action);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "FRAME: %.2f", Camera_CurrentActionFrame);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "MODE: %d", CameraType[3]);
@@ -982,6 +1002,11 @@ extern "C"
 		// Update info panels
 		switch (DebugSetting)
 		{
+			// Player and camera
+		case 2:
+		case 3:
+			if (KeyboardKeys[KEY_H].pressed) AngleHexadecimal = !AngleHexadecimal;
+			break;
 			// Input
 		case 4:
 			UpdateKeys();
