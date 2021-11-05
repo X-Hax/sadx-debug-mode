@@ -8,7 +8,7 @@ Debug Mode is a mod for Sonic Adventure DX PC (2004) that adds various debug fea
 2) If you press the Z button on the controller (or the B key on the keyboard) while also holding the A button (or its keyboard counterpart - X key by default), vanilla debug mode will be enabled. To disable it, press the same button/key combination again.
 3) Press P on the keyboard to enable Crash Log. This will log each texture list and object code change to the SADX Mod Loader log/console.
 4) Press Pause/Break on the keyboard the freeze and unfreeze the game. Press Insert to advance one frame forward.
-5) In the Sound Queue screen, press H on the keyboard to toggle between decimal, hexadecimal and soundbank representations of sound IDs. In the LS Palette and Stage Lights screens, press H on the keyboard to toggle between multiple LS Palette Data and Stage Light Data entries for the current stage.
+5) In the Player and Camera screens, press H on the keyboard to display angles as hexadecimal values. In the Sound Queue screen, press H on the keyboard to toggle between decimal, hexadecimal and soundbank representations of sound IDs. In the LS Palette and Stage Lights screens, press H on the keyboard to toggle between multiple LS Palette Data and Stage Light Data entries for the current stage.
 6) Press the C button on the controller or the C key on the keyboard to enable or disable collision data display.
 7) Press T to toggle textures.
 8) Press F to toggle fog.
