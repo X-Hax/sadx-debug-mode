@@ -76,6 +76,8 @@ void FreeCam_OnInput()
 	// Calculate camera movement speed and angle
 	float movementSpeed_CurX = FreeCamSpeed * abs(FreeCamMoveX) / 40.0f;
 	float movementSpeed_CurY = FreeCamSpeed * abs(FreeCamMoveY) / 40.0f;
+	float sign_y = (FreeCamMoveY > 0) ? -1.0f : 1.0f;
+	float sign_x = (FreeCamMoveX > 0) ? -1.0f : 1.0f;
 	Angle angle_hz_move = -Camera_Data1->Rotation.y - (unsigned __int64)(atan2(0, FreeCamMoveX) * 65536.0 * -0.1591549762031479);
 	Angle angle_hz_zoom = -Camera_Data1->Rotation.y - (unsigned __int64)(atan2(FreeCamMoveY, 0) * 65536.0 * -0.1591549762031479);
 	Angle angle_vt_zoom = Camera_Data1->Rotation.x - (unsigned __int64)(atan2(FreeCamMoveY, 0) * 65536.0 * -0.1591549762031479);
@@ -84,43 +86,26 @@ void FreeCam_OnInput()
 	switch (FreeCamMode)
 	{
 	case Camera_Look:
-		if (FreeCamMoveY > 0)
-			Camera_Data1->Rotation.x = (int)(Camera_Data1->Rotation.x - (movementSpeed_CurY * 100));
-		if (FreeCamMoveY < 0)
-			Camera_Data1->Rotation.x = (int)(Camera_Data1->Rotation.x + (movementSpeed_CurY * 100));
-		if (FreeCamMoveX > 0)
-			Camera_Data1->Rotation.y = (int)(Camera_Data1->Rotation.y - (movementSpeed_CurX * 100));
-		if (FreeCamMoveX < 0)
-			Camera_Data1->Rotation.y = (int)(Camera_Data1->Rotation.y + (movementSpeed_CurX * 100));
+		if (FreeCamMoveY != 0)
+			Camera_Data1->Rotation.x = (int)(Camera_Data1->Rotation.x + (movementSpeed_CurY * 100.0f * sign_y));
+		if (FreeCamMoveX != 0)
+			Camera_Data1->Rotation.y = (int)(Camera_Data1->Rotation.y + (movementSpeed_CurX * 100.0f * sign_x));
 		break;
 	case Camera_Move:
-		if (FreeCamMoveX < 0)
-		{
-			Camera_Data1->Position.x -= njCos(angle_hz_move) * (movementSpeed_CurX);
-			Camera_Data1->Position.z -= njSin(angle_hz_move) * (movementSpeed_CurX);
-		}
-		if (FreeCamMoveX > 0)
+		if (FreeCamMoveX != 0)
 		{
 			Camera_Data1->Position.x += njCos(angle_hz_move) * (movementSpeed_CurX);
 			Camera_Data1->Position.z += njSin(angle_hz_move) * (movementSpeed_CurX);
 		}
-		if (FreeCamMoveY > 0)
-			Camera_Data1->Position.y += movementSpeed_CurY;
-		if (FreeCamMoveY < 0)
-			Camera_Data1->Position.y -= movementSpeed_CurY;
+		if (FreeCamMoveY != 0)
+			Camera_Data1->Position.y -= movementSpeed_CurY * sign_y;
 		break;
 	case Camera_Zoom:
-		if (FreeCamMoveY < 0)
+		if (FreeCamMoveY != 0)
 		{
 			Camera_Data1->Position.x += njCos(angle_hz_zoom) * (movementSpeed_CurY);
 			Camera_Data1->Position.z += njSin(angle_hz_zoom) * (movementSpeed_CurY);
 			Camera_Data1->Position.y += njCos(angle_vt_zoom) * (movementSpeed_CurY);
-		}
-		if (FreeCamMoveY > 0)
-		{
-			Camera_Data1->Position.x -= njSin(angle_hz_zoom) * (movementSpeed_CurY);
-			Camera_Data1->Position.z += njCos(angle_hz_zoom) * (movementSpeed_CurY);
-			Camera_Data1->Position.y -= njSin(angle_vt_zoom) * (movementSpeed_CurY);
 		}
 		break;
 	}
