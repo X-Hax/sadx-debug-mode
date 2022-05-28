@@ -4,6 +4,8 @@
 
 int DisplaySoundIDMode = 0;
 
+DataArray(SoundEntry, SoundQueue, 0x3B292F8, 35);
+
 SoundBank_SE GetBankNumberAndID(int SoundID_HEX)
 {
 	SoundBank_SE result{ 127, 127, "ERROR" };

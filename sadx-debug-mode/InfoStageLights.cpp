@@ -4,6 +4,8 @@
 int CurrentLights[] = { -1, -1, -1, -1, -1, -1 };
 int CurrentStageLight = 0;
 
+DataPointer(LE_LIGHT_ENV*, StageLights, 0x40A8A2);
+
 void AddStageLight(int ID)
 {
 	for (unsigned int q = 0; q < LengthOfArray(CurrentLights); q++)
@@ -29,7 +31,7 @@ void FindStageLight()
 	}
 	for (unsigned int i = 0; i < 255; i++)
 	{
-		if (StageLights[i].level == CurrentLevel && StageLights[i].act == CurrentAct)
+		if (StageLights[i].stgNo == CurrentLevel && StageLights[i].actNo == CurrentAct)
 		{
 			//PrintDebug("Adding stage light\n");
 			AddStageLight(i);
@@ -46,24 +48,24 @@ void StageLightInfo()
 	SetDebugFontColor(GetModuleHandle(L"sadx-dc-lighting") != nullptr ? 0xFFFF0000 : 0xFF88FFAA);
 	DisplayDebugString(NJM_LOCATION(5, 1), "- STAGE LIGHTS INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "INDEX: %d", StageLights[CurrentLights[CurrentStageLight]].index);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "FLAGS: %d", StageLights[CurrentLights[CurrentStageLight]].use_direction);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 6), "DIR X: %.3f", StageLights[CurrentLights[CurrentStageLight]].direction.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "DIR Y: %.3f", StageLights[CurrentLights[CurrentStageLight]].direction.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "DIR Z: %.3f", StageLights[CurrentLights[CurrentStageLight]].direction.z);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "INDEX: %d", StageLights[CurrentLights[CurrentStageLight]].ligNo);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "FLAGS: %d", StageLights[CurrentLights[CurrentStageLight]].flgs);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 6), "DIR X: %.3f", StageLights[CurrentLights[CurrentStageLight]].vec.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "DIR Y: %.3f", StageLights[CurrentLights[CurrentStageLight]].vec.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "DIR Z: %.3f", StageLights[CurrentLights[CurrentStageLight]].vec.z);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "DIFFUSE : %.3f", StageLights[CurrentLights[CurrentStageLight]].dif);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 11), "SPECULAR: %.3f", StageLights[CurrentLights[CurrentStageLight]].spe);
 	// Stage Ambient
 	AmbColor.argb.a = 255;
-	AmbColor.argb.r = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].amb_r);
-	AmbColor.argb.g = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].amb_g);
-	AmbColor.argb.b = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].amb_b);
+	AmbColor.argb.r = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].ambR);
+	AmbColor.argb.g = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].ambG);
+	AmbColor.argb.b = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].ambB);
 	SetDebugFontColor(AmbColor.color);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "AMBIENT");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "R  : %.3f", StageLights[CurrentLights[CurrentStageLight]].amb_r);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "G  : %.3f", StageLights[CurrentLights[CurrentStageLight]].amb_g);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "B  : %.3f", StageLights[CurrentLights[CurrentStageLight]].amb_b);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "R  : %.3f", StageLights[CurrentLights[CurrentStageLight]].ambR);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "G  : %.3f", StageLights[CurrentLights[CurrentStageLight]].ambG);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "B  : %.3f", StageLights[CurrentLights[CurrentStageLight]].ambB);
 	// Stage Diffuse
 	AmbColor.argb.a = 255;
 	AmbColor.argb.r = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].r);

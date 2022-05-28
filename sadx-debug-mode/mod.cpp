@@ -4,26 +4,36 @@
 #include "Data.h"
 #include "FreeCam.h"
 #include "FreeMovement.h"
-
-FunctionPointer(void, Cutscene_WaitForInput, (int a), 0x4314D0);
-FunctionPointer(void, DrawCollisionInfo, (CollisionInfo* collision), 0x79F4D0);
-FunctionPointer(void, DrawDebugCollision, (ObjectMaster* a1), 0x4DBCC0);
-FastcallFunctionPointer(void, stSetTexture, (int index), 0x0078D140);
+#include "Keys.h"
 
 void LSPaletteInfo();
 void SoundInfo();
 void SoundBankInfo();
 void StageLightInfo();
 
+FunctionPointer(void, DrawCollisionInfo, (CollisionInfo* collision), 0x79F4D0);
+FastcallFunctionPointer(void, stSetTexture, (int index), 0x0078D140);
+
+DataArray(KeyboardKey, KeyboardKeys, 0x3B0E3E0, 256);
+DataPointer(KeyboardKey, Key_B, 0x03B0E3EF);
+DataPointer(NJS_TEXLIST, DebugFontTexlist, 0x38A5CF8);
+DataPointer(int, CurrentCutsceneCode, 0x3B2C568);
+DataPointer(int, CutsceneID, 0x3B2C570);
+DataPointer(char, CurrentCharacterSelection, 0x3B2A2FD);
+DataPointer(char, FreezeFrameByte1, 0x78BA50);
+DataPointer(char, FreezeFrameByte2, 0x78B880);
+
 char DebugSetting = 0; // Menu ID
+bool FreeCamEnabled = false;
 
 static bool FogEnable = true;
 static bool CollisionDebug = false;
-static bool TextureDebug = false;
-static bool CrashDebug = false;
 static Sint8 DeathPlanesEnabled = -1;
 
+static bool TextureDebug = false;
 static int CurTexList_Current = 0;
+
+static bool CrashDebug = false;
 static bool AngleHexadecimal = false;
 static int VoiceID = -1;
 
@@ -31,9 +41,8 @@ static bool SpeedHack = false;
 static int FrameIncrementCurrent = 1;
 static bool FreezeFrame_Pressed = false;
 static int FreezeFrame_Mode = 0;
-static Uint8 BackupBytes[] = { 0xC3u, 0xC3u };
+static Uint8 FreezeFrameBackupBytes[] = { 0xC3u, 0xC3u };
 
-bool FreeCamEnabled = false;
 static char DebugMsgBuffer[32];
 static std::string FreeCamModeStrings[] = { "OFF", "LOOK", "MOVE", "ZOOM", "LOCKED" };
 
@@ -560,8 +569,8 @@ extern "C"
 		// Freeze frame/frame advance toggle
 		if ((GameState != 0 && KeyboardKeys[KEY_PAUSEBREAK].pressed && !FreezeFrame_Mode) || FreezeFrame_Mode == 3)
 		{
-			BackupBytes[0] = Byte1;
-			BackupBytes[1] = Byte2;
+			FreezeFrameBackupBytes[0] = FreezeFrameByte1;
+			FreezeFrameBackupBytes[1] = FreezeFrameByte2;
 			WriteData<1>((char*)0x78BA50, 0xC3u);
 			WriteData<1>((char*)0x78B880, 0xC3u);
 			FreezeFrame_Mode = 1;
@@ -570,8 +579,8 @@ extern "C"
 		}
 		if (GameState != 0 && KeyboardKeys[KEY_PAUSEBREAK].pressed && FreezeFrame_Mode && !FreezeFrame_Pressed)
 		{
-			WriteData<1>((char*)0x78BA50, BackupBytes[0]);
-			WriteData<1>((char*)0x78B880, BackupBytes[1]);
+			WriteData<1>((char*)0x78BA50, FreezeFrameBackupBytes[0]);
+			WriteData<1>((char*)0x78B880, FreezeFrameBackupBytes[1]);
 			FreezeFrame_Mode = 0;
 			UnpauseAllSounds(0);
 		}
@@ -579,8 +588,8 @@ extern "C"
 		{
 			if (FreezeFrame_Mode)
 			{
-				WriteData<1>((char*)0x78BA50, BackupBytes[0]);
-				WriteData<1>((char*)0x78B880, BackupBytes[1]);
+				WriteData<1>((char*)0x78BA50, FreezeFrameBackupBytes[0]);
+				WriteData<1>((char*)0x78B880, FreezeFrameBackupBytes[1]);
 			}
 			FreezeFrame_Mode = 3;
 			UnpauseAllSounds(0);

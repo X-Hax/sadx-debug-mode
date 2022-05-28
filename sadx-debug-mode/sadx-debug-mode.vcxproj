@@ -92,6 +92,7 @@
     <ClInclude Include="FreeCam.h" />
     <ClInclude Include="FreeMovement.h" />
     <ClInclude Include="InfoSound.h" />
+    <ClInclude Include="Keys.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

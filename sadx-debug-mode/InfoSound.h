@@ -1,6 +1,22 @@
 #pragma once
 #include <SADXModLoader.h>
 
+struct SoundEntry
+{
+	int Priority; // -1 for top priority
+	int PlayTime; // -1 to loop indefinitely
+	void* SourceEntity; // Sound stops when entity is destroyed
+	int Flags; // ANDs with 1, 10, 100, 200, 800, 2000, 4000
+	int SoundID;
+	int Panning;
+	int CurrentVolume;
+	int MaxVolume; // Sometimes an entity pointer is put here for 3D sounds
+	int PitchShift;
+	NJS_VECTOR pos;
+	int qnum; // Set to -1 for 3D sounds
+	int banknum; // Unused
+};
+
 struct SoundQueueVisual
 {
 	char Bank_ID;
