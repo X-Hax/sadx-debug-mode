@@ -21,7 +21,19 @@
     <ClCompile Include="FreeCam.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FreeMovements.cpp">
+    <ClCompile Include="FreeMovement.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InfoLSPalette.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InfoSound.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InfoStageLights.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,7 +44,10 @@
     <ClInclude Include="FreeCam.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FreeMovements.h">
+    <ClInclude Include="FreeMovement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InfoSound.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -80,13 +80,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="FreeCam.cpp" />
-    <ClCompile Include="FreeMovements.cpp" />
+    <ClCompile Include="FreeMovement.cpp" />
+    <ClCompile Include="InfoLSPalette.cpp" />
+    <ClCompile Include="InfoSound.cpp" />
+    <ClCompile Include="InfoStageLights.cpp" />
     <ClCompile Include="mod.cpp" />
+    <ClCompile Include="UI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Data.h" />
     <ClInclude Include="FreeCam.h" />
-    <ClInclude Include="FreeMovements.h" />
+    <ClInclude Include="FreeMovement.h" />
+    <ClInclude Include="InfoSound.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

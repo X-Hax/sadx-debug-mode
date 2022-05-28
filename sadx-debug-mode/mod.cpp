@@ -2,99 +2,46 @@
 #include "IniFile.hpp"
 #include "Trampoline.h"
 #include "Data.h"
-#include "SADXFunctionsNew.h"
 #include "FreeCam.h"
-#include "FreeMovements.h"
+#include "FreeMovement.h"
 
 FunctionPointer(void, Cutscene_WaitForInput, (int a), 0x4314D0);
 FunctionPointer(void, DrawCollisionInfo, (CollisionInfo* collision), 0x79F4D0);
 FunctionPointer(void, DrawDebugCollision, (ObjectMaster* a1), 0x4DBCC0);
 FastcallFunctionPointer(void, stSetTexture, (int index), 0x0078D140);
 
-int CurrentPalettes[]= { -1, -1, -1, -1, -1, -1 };
-int CurrentLights[] = { -1, -1, -1, -1, -1, -1 };
-int CurrentPalette = 0;
-int CurrentStageLight = 0;
-int DebugMessageTimer = 0;
-bool SpeedHack = false;
-int FrameIncrementCurrent = 1;
-bool CollisionDebug = false;
-bool TextureDebug = false;
-const char* DebugMessage;
-char DebugMsgBuffer[32];
-bool FreeCamEnabled = false;
-NJS_COLOR DebugFontColorBK;
-float DebugFontSizeBK;
+void LSPaletteInfo();
+void SoundInfo();
+void SoundBankInfo();
+void StageLightInfo();
 
-char DebugSetting = 0;
-bool CrashDebug = false;
-bool EnableFontScaling = false;
-signed char DeathPlanesEnabled = -1;
-int DisplaySoundIDMode = 0;
-int CurTexList_Current = 0;
-bool AngleHexadecimal = false;
-int VoiceID = -1;
-bool FreezeFrame_Pressed = false;
-int FreezeFrame_Mode = 0;
-char BackupBytes[] = { 0xC3u, 0xC3u };
-std::string FreeCamModeStrings[] = {"OFF", "LOOK", "MOVE", "ZOOM", "LOCKED"};
+char DebugSetting = 0; // Menu ID
+
+static bool FogEnable = true;
+static bool CollisionDebug = false;
+static bool TextureDebug = false;
+static bool CrashDebug = false;
+static Sint8 DeathPlanesEnabled = -1;
+
+static int CurTexList_Current = 0;
+static bool AngleHexadecimal = false;
+static int VoiceID = -1;
+
+static bool SpeedHack = false;
+static int FrameIncrementCurrent = 1;
+static bool FreezeFrame_Pressed = false;
+static int FreezeFrame_Mode = 0;
+static Uint8 BackupBytes[] = { 0xC3u, 0xC3u };
+
+bool FreeCamEnabled = false;
+static char DebugMsgBuffer[32];
+static std::string FreeCamModeStrings[] = { "OFF", "LOOK", "MOVE", "ZOOM", "LOCKED" };
 
 // White texture for texture override
-unsigned __int8 whitetexturedata[6144];
-NJS_TEXINFO whitetexturetexinfo;
-NJS_TEXNAME whitetextures[1];
-NJS_TEXLIST whitetexturetexlist = {arrayptrandlength(whitetextures)};
-NJS_TEXMEMLIST whitetexturetexmemlist;
-
-void BackupDebugFontSettings()
-{
-	DebugFontColorBK = DebugFontColor;
-	DebugFontSizeBK = DebugFontSize;
-}
-
-void RestoreDebugFontSettings()
-{
-	DebugFontColor = DebugFontColorBK;
-	DebugFontSize = DebugFontSizeBK;
-}
-
-void DrawDebugRectangle(float leftchars, float topchars, float numchars_horz, float numchars_vert)
-{
-	float FontScale;
-	if (!EnableFontScaling) FontScale = 1.0f;
-	else
-	{
-		if ((float)HorizontalResolution / (float)VerticalResolution > 1.33f) FontScale = floor((float)VerticalResolution / 480.0f);
-		else FontScale = floor((float)HorizontalResolution / 640.0f);
-	}
-	njColorBlendingMode(0, NJD_COLOR_BLENDING_SRCALPHA);
-	njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_INVSRCALPHA);
-	if (DebugSetting == 6 || DebugSetting == 7)
-	{
-		if (EnableFontScaling || HorizontalResolution < 1024) DrawRect_Queue(leftchars*FontScale*10.0f, topchars*FontScale*10.0f, numchars_horz*FontScale*10.0f, numchars_vert*FontScale*10.0f, 62041.496f, 0x7F0000FF, QueuedModelFlagsB_EnableZWrite);
-		else DrawRect_Queue(leftchars*FontScale*16.0f, topchars*FontScale*16.0f, numchars_horz*FontScale*16.0f, numchars_vert*FontScale*16.0f, 62041.496f, 0x7F0000FF, QueuedModelFlagsB_EnableZWrite); 
-	}
-	else DrawRect_Queue(leftchars*FontScale*16.0f, topchars*FontScale*16.0f, numchars_horz*FontScale*16.0f, numchars_vert*FontScale*16.0f, 62041.496f, 0x7F0000FF, QueuedModelFlagsB_EnableZWrite);
-	njColorBlendingMode(0, NJD_COLOR_BLENDING_SRCALPHA);
-	njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_INVSRCALPHA);
-}
-
-void RenderDeathPlanes(NJS_OBJECT* object)
-{
-	SetTextureToCommon();
-	njPushMatrix(0);
-	njControl3D_Backup();
-	njControl3D_Add(NJD_CONTROL_3D_CONSTANT_MATERIAL | NJD_CONTROL_3D_ENABLE_ALPHA | NJD_CONTROL_3D_CONSTANT_ATTR);
-	BackupConstantAttr();
-	AddConstantAttr(0, NJD_FLAG_USE_ALPHA);
-	SetMaterialAndSpriteColor_Float(0.5f, 1.0f, 0, 0);
-	DrawQueueDepthBias = 47952.0f;
-	ProcessModelNode(object, (QueuedModelFlagsB)4, 1.0f);
-	njPopMatrix(1u);
-	DrawQueueDepthBias = 0.0f;
-	RestoreConstantAttr();
-	njControl3D_Restore();
-}
+static Uint8 whitetexturedata[6144];
+static NJS_TEXINFO whitetexturetexinfo;
+static NJS_TEXNAME whitetextures[1];
+static NJS_TEXLIST whitetexturetexlist;
 
 void UpdateKeys()
 {
@@ -103,7 +50,7 @@ void UpdateKeys()
 	int CursorPosY1 = 21;
 	int CursorPosX2 = 14;
 	int CursorPosY2 = 23;
-	for (int i = 1; i < 256; i++) //exclude key 0 which is always pressed
+	for (int i = 1; i < 256; i++) // Exclude key 0 which is always pressed
 	{
 		if (KeyboardKeys[i].held)
 		{
@@ -132,54 +79,31 @@ void UpdateButtons()
 	std::string PadString = "";
 	int CursorPos = 17;
 	if (ControllerPointers[0]->HeldButtons & Buttons_A)
-	{
 		ButtonsString += "A ";
-	}
 	if (ControllerPointers[0]->HeldButtons & Buttons_B)
-	{
 		ButtonsString += "B ";
-	}
 	if (ControllerPointers[0]->HeldButtons & Buttons_C)
-	{
 		ButtonsString += "C ";
-	}
 	if (ControllerPointers[0]->HeldButtons & Buttons_D)
-	{
 		ButtonsString += "D ";
-	}
 	if (ControllerPointers[0]->HeldButtons & Buttons_X)
-	{
 		ButtonsString += "X ";
-	}
 	if (ControllerPointers[0]->HeldButtons & Buttons_Y)
-	{
 		ButtonsString += "Y ";
-	}
 	if (ControllerPointers[0]->HeldButtons & Buttons_Z)
-	{
 		ButtonsString += "Z ";
-	}
 	if (ControllerPointers[0]->HeldButtons & Buttons_Start)
-	{
 		ButtonsString += "START ";
-	}
 	if (ControllerPointers[0]->HeldButtons & Buttons_Up)
-	{
 		PadString += "UP ";
-	}
 	if (ControllerPointers[0]->HeldButtons & Buttons_Down)
-	{
 		PadString += "DOWN ";
-	}
 	if (ControllerPointers[0]->HeldButtons & Buttons_Left)
-	{
 		PadString += "LEFT ";
-	}
 	if (ControllerPointers[0]->HeldButtons & Buttons_Right)
-	{
 		PadString += "RIGHT ";
-	}
-	if (PadString == "") PadString = "CENTER";
+	if (PadString == "") 
+		PadString = "CENTER";
 	BackupDebugFontSettings();
 	SetDebugFontSize(16);
 	SetDebugFontColor(0xFFBFBFBF);
@@ -188,19 +112,7 @@ void UpdateButtons()
 	RestoreDebugFontSettings();
 }
 
-void ScaleDebugFont(int scale)
-{
-	float FontScale;
-	if (!EnableFontScaling) FontScale = 1.0f;
-	else
-	{
-		if ((float)HorizontalResolution / (float)VerticalResolution > 1.33f) FontScale = floor((float)VerticalResolution / 480.0f);
-		else FontScale = floor((float)HorizontalResolution / 640.0f);
-	}
-	SetDebugFontSize(FontScale*scale);
-}
-
-void PlayerDebug()
+void PlayerInfo()
 {
 	ScaleDebugFont(16);
 	if (EntityData1Ptrs[0] == nullptr || CharObj2Ptrs[0] == nullptr)
@@ -216,18 +128,9 @@ void PlayerDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "X: %.2f", EntityData1Ptrs[0]->Position.x);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "Y: %.2f", EntityData1Ptrs[0]->Position.y);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "Z: %.2f", EntityData1Ptrs[0]->Position.z);
-	if (AngleHexadecimal)
-	{
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %04X / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.x, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.x);
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %04X / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.y, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.y);
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %04X / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.z, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.z);
-	}
-	else
-	{
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.x, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.x);
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.y, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.y);
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.z, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.z);
-	}
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), AngleHexadecimal ? "ANG X: %04X / %03.0f" : "ANG X: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.x, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), AngleHexadecimal ? "ANG Y: %04X / %03.0f" : "ANG Y: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.y, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), AngleHexadecimal ? "ANG Z: %04X / %03.0f" : "ANG Z: %06d / %03.0f", (Uint16)EntityData1Ptrs[0]->Rotation.z, (360.0f / 65535.0f) * (Uint16)EntityData1Ptrs[0]->Rotation.z);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 11), "ACTION: %03d", EntityData1Ptrs[0]->Action);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "STATUS: %X", EntityData1Ptrs[0]->Status);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "NEXT  : %X", EntityData1Ptrs[0]->NextAction);
@@ -241,7 +144,7 @@ void PlayerDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 24), "IDLE: %04d", CharObj2Ptrs[0]->IdleTime);
 }
 
-void CameraDebug()
+void CameraInfo()
 {
 	ScaleDebugFont(16);
 	if (Camera_Data1 == nullptr)
@@ -257,20 +160,10 @@ void CameraDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "X: %.2f", Camera_Data1->Position.x);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "Y: %.2f", Camera_Data1->Position.y);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 5), "Z: %.2f", Camera_Data1->Position.z);
-	if (AngleHexadecimal)
-	{
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %04X / %03.0f", (Uint16)Camera_Data1->Rotation.x, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.x);
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %04X / %03.0f", (Uint16)Camera_Data1->Rotation.y, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.y);
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %04X / %03.0f", (Uint16)Camera_Data1->Rotation.z, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.z);
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "HZFOV: %04X / %03.0f", (Uint16)HorizontalFOV_BAMS, (360.0f / 65535.0f) * (Uint16)HorizontalFOV_BAMS);
-	}
-	else
-	{
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "ANG X: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.x, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.x);
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "ANG Y: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.y, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.y);
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 9), "ANG Z: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.z, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.z);
-		DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "HZFOV: %06d / %03.0f", (Uint16)HorizontalFOV_BAMS, (360.0f / 65535.0f) * (Uint16)HorizontalFOV_BAMS);
-	}
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), AngleHexadecimal ? "ANG X: %04X / %03.0f" : "ANG X: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.x, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.x);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), AngleHexadecimal ? "ANG Y: %04X / %03.0f" : "ANG Y: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.y, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.y);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 9), AngleHexadecimal ? "ANG Z: %04X / %03.0f" : "ANG Z: %06d / %03.0f", (Uint16)Camera_Data1->Rotation.z, (360.0f / 65535.0f) * (Uint16)Camera_Data1->Rotation.z);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), AngleHexadecimal ? "HZFOV: %04X / %03.0f" : "HZFOV: %06d / %03.0f", (Uint16)HorizontalFOV_BAMS, (360.0f / 65535.0f) * (Uint16)HorizontalFOV_BAMS);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "ACTION: %02d", Camera_Data1->Action);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "FRAME: %.2f", Camera_CurrentActionFrame);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "MODE: %d", CameraType[3]);
@@ -279,7 +172,7 @@ void CameraDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "CAM SPEED: %.2f", FreeCamSpeed);
 }
 
-void FogDebug()
+void FogInfo()
 {
 	NJS_COLOR FogColor;
 	FogColor.color = LevelFogData.Color;
@@ -310,11 +203,11 @@ void FogDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "LEVEL MAX: %.4f", LevelDrawDistance.Maximum);
 }
 
-void GameDebug()
+void GameInfo()
 {
 	ScaleDebugFont(16);
 	SetDebugFontColor(0xFF88FFAA);
-	DrawDebugRectangle(1.75f, 0.75f, 22, 21.5f);
+	DrawDebugRectangle(1.75f, 0.75f, 22, 22.5f);
 	DisplayDebugString(NJM_LOCATION(5, 1), "- GAME STATS -");
 	SetDebugFontColor(0xFFBFBFBF);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "FRAME   : %08d", FrameCounter);
@@ -329,26 +222,12 @@ void GameDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "CHAO STAGE: %02d", CurrentChaoStage);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "EVENT ID  : %03d", CutsceneID);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 17), "EVENT CODE: %X", CurrentCutsceneCode);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "MUSIC ID  : %d", CurrentSong);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "LAST VOICE: %d", VoiceID);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "CURR MUSIC  : %d", CurrentSong);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "LAST MUSIC  : %d", LastSong);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "LAST VOICE  : %d", VoiceID);
 }
 
-Sint32 __cdecl njSetTexture_Hax(NJS_TEXLIST* texlist)
-{
-	CurrentTexList = texlist;
-	CurrentTextureNum = 0;
-	if (CrashDebug)
-	{
-		if (CurTexList_Current != (int)CurrentTexList)
-		{
-			PrintDebug("Texlist change: %X\n", CurrentTexList);
-			CurTexList_Current = (int)CurrentTexList;
-		}
-	}
-	return Direct3D_SetTexList(texlist);
-}
-
-void InputDebug()
+void InputInfo()
 {
 	ScaleDebugFont(16);
 	DrawDebugRectangle(1.75f, 0.75f, 30.5f, 24.5f);
@@ -370,8 +249,10 @@ void InputDebug()
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "KEYS HELD:");
 	njPushMatrix(0);
 	float FontScale = 1.0f;
-	if ((float)HorizontalResolution / (float)VerticalResolution > 1.33f) FontScale = floor((float)VerticalResolution / 480.0f) * 0.5f;
-	else FontScale = floor((float)HorizontalResolution / 640.0f) * 0.5f;
+	if ((float)HorizontalResolution / (float)VerticalResolution > 1.33f) 
+		FontScale = floor((float)VerticalResolution / 480.0f) * 0.5f;
+	else 
+		FontScale = floor((float)HorizontalResolution / 640.0f) * 0.5f;
 	float AnalogRectPosX = (float)HorizontalResolution - 160.0f * FontScale;
 	float AnalogRectPosY = (float)VerticalResolution - 160.0f * FontScale;
 	float XPos = (float)ControllerPointers[0]->LeftStickX * FontScale * 0.5f;
@@ -386,399 +267,6 @@ void InputDebug()
 	DrawRect_Queue(AnalogCenterX2, AnalogCenterY2, AnalogCenterX2 + 10.0f * FontScale, AnalogCenterY2 + 10.0f * FontScale, 64000.0f, 0xFF0000FF, QueuedModelFlagsB_SomeTextureThing);
 	DrawRect_Queue(AnalogCenterX, AnalogCenterY, AnalogCenterX + 10.0f * FontScale, AnalogCenterY + 10.0f * FontScale, 64000.0f, 0xFFFF0000, QueuedModelFlagsB_SomeTextureThing);
 	njPopMatrix(1u);
-}
-
-NJS_POINT2COL Pause_Point2Col;
-NJS_POINT2 Pause_Points[4];
-NJS_COLOR Pause_Colors[4];
-
-void DrawAss(NJS_COLOR color1, NJS_COLOR color2, float C1_POW, float C2_POW, float YPos)
-{
-	NJS_POINT2COL ColorGradient_Point2Col;
-	NJS_POINT2 ColorGradient_Points[4];
-	NJS_COLOR ColorGradient_Colors[] = { {0xFFFF00FF}, {0xFFFF00FF}, {0x00000000}, {0x00000000} };
-	for (int i = 0; i < 256; i++)
-	{
-		//ColorR( "Generate_CO1" ) * ( 1 - ( LoopIndex("co1") ) / 256.0 ) pow COPow( "Generate_CO1" )
-		//ColorR( "Generate_CO2" ) * ( 1 - ( LoopIndex("co2") ) / 256.0 ) pow COPow( "Generate_CO2" )
-		ColorGradient_Colors[0].argb.a = 255;
-		ColorGradient_Colors[0].argb.r = min(255, (color1.argb.r * pow(1.0f - i / 256.0f, C1_POW) + color2.argb.r * pow(1.0f - i / 256.0f, C2_POW)));
-		ColorGradient_Colors[0].argb.g = min(255, (color1.argb.g * pow(1.0f - i / 256.0f, C1_POW) + color2.argb.g * pow(1.0f - i / 256.0f, C2_POW)));
-		ColorGradient_Colors[0].argb.b = min(255, (color1.argb.b * pow(1.0f - i / 256.0f, C1_POW) + color2.argb.b * pow(1.0f - i / 256.0f, C2_POW)));
-		ColorGradient_Colors[1].color = ColorGradient_Colors[0].color;
-		ColorGradient_Colors[2].color = 0xFF000000;
-		ColorGradient_Colors[3].color = 0xFF000000;
-		ColorGradient_Point2Col.tex = 0;
-		ColorGradient_Points[0].x = 32+i;
-		ColorGradient_Points[0].y = YPos - 128;
-		ColorGradient_Points[1].x = 32+i;
-		ColorGradient_Points[1].y = YPos - 96;
-		ColorGradient_Points[2].x = 33+i;
-		ColorGradient_Points[2].y = YPos - 128;
-		ColorGradient_Points[3].x = 33+i;
-		ColorGradient_Points[3].y = YPos - 96;
-		ColorGradient_Point2Col.p = (NJS_POINT2*)&ColorGradient_Points;
-		ColorGradient_Point2Col.col = (NJS_COLOR*)&ColorGradient_Colors;
-		Draw2DLinesMaybe_Queue((NJS_POINT2COL*)&ColorGradient_Point2Col, 4, 34000.0f, NJD_TRANSPARENT, QueuedModelFlagsB_SomeTextureThing);
-	}
-}
-
-void AddLSPalette(int ID)
-{
-	for (int q = 0; q < LengthOfArray(CurrentPalettes); q++)
-	{
-		if (CurrentPalettes[q] == ID)
-		{
-			return;
-		}
-		if (CurrentPalettes[q] == -1)
-		{
-			CurrentPalettes[q] = ID;
-			//PrintDebug("Added palette: %d\n", ID);
-			return;
-		}
-	}
-}
-
-void AddStageLight(int ID)
-{
-	for (int q = 0; q < LengthOfArray(CurrentLights); q++)
-	{
-		if (CurrentLights[q] == ID)
-		{
-			return;
-		}
-		if (CurrentLights[q] == -1)
-		{
-			CurrentLights[q] = ID;
-			//PrintDebug("Added stage light: %d\n", ID);
-			return;
-		}
-	}
-}
-
-void FindLSPalette()
-{
-	for (int q = 0; q < LengthOfArray(CurrentPalettes); q++)
-	{
-		CurrentPalettes[q] = -1;
-	}
-	for (int i = 0; i < 255; i++)
-	{
-		if (LightPaletteData[i].Level == CurrentLevel && LightPaletteData[i].Act == CurrentAct)
-		{
-			//PrintDebug("Adding palette\n");
-			AddLSPalette(i);
-		}
-	}
-}
-
-void FindStageLight()
-{
-	for (int q = 0; q < LengthOfArray(CurrentLights); q++)
-	{
-		CurrentLights[q] = -1;
-	}
-	for (int i = 0; i < 255; i++)
-	{
-		if (StageLights[i].level == CurrentLevel && StageLights[i].act == CurrentAct)
-		{
-			//PrintDebug("Adding stage light\n");
-			AddStageLight(i);
-		}
-	}
-}
-
-void LSPaletteDebug()
-{
-	FindLSPalette();
-	NJS_COLOR AmbColor;
-	NJS_COLOR CO1Color;
-	NJS_COLOR CO2Color;
-	NJS_COLOR SP1Color;
-	NJS_COLOR SP2Color;
-	ScaleDebugFont(16);
-	DrawDebugRectangle(1.75f, 0.75f, 29, 29);
-	if (GetModuleHandle(L"sadx-dc-lighting") != nullptr) SetDebugFontColor(0xFFFF0000);
-	else SetDebugFontColor(0xFF88FFAA);
-	DisplayDebugString(NJM_LOCATION(6, 1), "- LS PALETTE INFO -");
-	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "TYPE : %X", LightPaletteData[CurrentPalettes[CurrentPalette]].Type);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "FLAGS: %X", LightPaletteData[CurrentPalettes[CurrentPalette]].Flags);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 6), "DIR X: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].Direction.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "DIR Y: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].Direction.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "DIR Z: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].Direction.z);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "DIFFUSE: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].DIF);
-	AmbColor.argb.a = 255;
-	AmbColor.argb.r = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].AMB_R);
-	AmbColor.argb.g = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].AMB_G);
-	AmbColor.argb.b = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].AMB_B);
-	SetDebugFontColor(AmbColor.color);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 12), "AMBIENT");
-	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "R: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].AMB_R);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "G: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].AMB_G);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "B: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].AMB_B);
-	//CO1
-	CO1Color.argb.a = 255;
-	CO1Color.argb.r = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].CO_R);
-	CO1Color.argb.g = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].CO_G);
-	CO1Color.argb.b = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].CO_B);
-	SetDebugFontColor(CO1Color.color);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 17), "COLOR1");
-	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 18), "R  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO_R);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "G  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO_G);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "B  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO_B);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "POW: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO_pow);
-	//SP1
-	SP1Color.argb.a = 255;
-	SP1Color.argb.r = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].SP_R);
-	SP1Color.argb.g = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].SP_G);
-	SP1Color.argb.b = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].SP_B);
-	SetDebugFontColor(SP1Color.color);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 17), "SPECULAR1");
-	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 18), "R  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP_R);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 19), "G  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP_G);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 20), "B  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP_B);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 21), "POW: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP_pow);
-	//CO2
-	CO2Color.argb.a = 255;
-	CO2Color.argb.r = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_R);
-	CO2Color.argb.g = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_G);
-	CO2Color.argb.b = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_B);
-	SetDebugFontColor(CO2Color.color);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 23), "COLOR2");
-	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 24), "R  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_R);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 25), "G  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_G);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 26), "B  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_B);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 27), "POW: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].CO2_pow);
-	//SP2
-	SP2Color.argb.a = 255;
-	SP2Color.argb.r = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_R);
-	SP2Color.argb.g = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_G);
-	SP2Color.argb.b = int(255.0f * LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_B);
-	SetDebugFontColor(SP2Color.color);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 23), "SPECULAR2");
-	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 24), "R  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_R);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 25), "G  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_G);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 26), "B  : %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_B);
-	DisplayDebugStringFormatted(NJM_LOCATION(17, 27), "POW: %.3f", LightPaletteData[CurrentPalettes[CurrentPalette]].SP2_pow);
-	//DisplayDebugStringFormatted(NJM_LOCATION(17, 27), "POW: %.3f", LightPaletteData[CurrentPalette].SP2_pow);
-	//DrawAss(CO1Color, CO2Color, LightPaletteData[CurrentPalette].CO_pow, LightPaletteData[CurrentPalette].CO2_pow, VerticalResolution);
-	//DrawAss(SP1Color, SP2Color, LSPalette.SP_pow, LSPalette.SP2_pow, VerticalResolution-48);
-}
-
-void StageLightDebug()
-{
-	FindStageLight();
-	NJS_COLOR AmbColor;
-	ScaleDebugFont(16);
-	DrawDebugRectangle(1.75f, 0.75f, 29, 22.5f);
-	if (GetModuleHandle(L"sadx-dc-lighting") != nullptr) SetDebugFontColor(0xFFFF0000);
-	else SetDebugFontColor(0xFF88FFAA);
-	DisplayDebugString(NJM_LOCATION(5, 1), "- STAGE LIGHTS INFO -");
-	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "INDEX: %d", StageLights[CurrentLights[CurrentStageLight]].index);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 4), "FLAGS: %d", StageLights[CurrentLights[CurrentStageLight]].use_direction);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 6), "DIR X: %.3f", StageLights[CurrentLights[CurrentStageLight]].direction.x);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 7), "DIR Y: %.3f", StageLights[CurrentLights[CurrentStageLight]].direction.y);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 8), "DIR Z: %.3f", StageLights[CurrentLights[CurrentStageLight]].direction.z);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 10), "DIFFUSE : %.3f", StageLights[CurrentLights[CurrentStageLight]].dif);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 11), "SPECULAR: %.3f", StageLights[CurrentLights[CurrentStageLight]].spe);
-	//Stage Ambient
-	AmbColor.argb.a = 255;
-	AmbColor.argb.r = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].amb_r);
-	AmbColor.argb.g = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].amb_g);
-	AmbColor.argb.b = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].amb_b);
-	SetDebugFontColor(AmbColor.color);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 13), "AMBIENT"); 
-	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 14), "R  : %.3f", StageLights[CurrentLights[CurrentStageLight]].amb_r);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 15), "G  : %.3f", StageLights[CurrentLights[CurrentStageLight]].amb_g);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 16), "B  : %.3f", StageLights[CurrentLights[CurrentStageLight]].amb_b);
-	//Stage Diffuse
-	AmbColor.argb.a = 255;
-	AmbColor.argb.r = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].r);
-	AmbColor.argb.g = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].g);
-	AmbColor.argb.b = int(255.0f * StageLights[CurrentLights[CurrentStageLight]].b);
-	SetDebugFontColor(AmbColor.color);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 18), "COLOR");
-	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 19), "R  : %.3f", StageLights[CurrentLights[CurrentStageLight]].r);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 20), "G  : %.3f", StageLights[CurrentLights[CurrentStageLight]].g);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, 21), "B  : %.3f", StageLights[CurrentLights[CurrentStageLight]].b);
-
-}
-
-SoundBank_SE GetBankNumberAndID(int SoundID_HEX)
-{
-	char BankID = 0;
-	char SoundID = 0;
-	const char* BankName = "ASS";
-	SoundBank_SE result;
-	if (SoundID_HEX == -1)
-	{
-		result.Bank_Name = "";
-		result.Bank_ID = -1;
-		result.SE_ID = -1;
-		return result;
-	}
-	else
-	{
-		for (int i = 0; i < LengthOfArray(SoundBanks) - 1; i++)
-		{
-			if (SoundID_HEX < SoundBanks[i + 1].StartID)
-			{
-				result.Bank_Name = SoundBanks[i].Name;
-				result.SE_ID = max(0, SoundID_HEX - SoundBanks[i].StartID - 1);
-				result.Bank_ID = SoundBanks[i].Name[8] - 48;
-				if (result.Bank_ID == 9) result.Bank_ID = 10; //to make 9 into A for ADX bank
-				if (result.Bank_ID == 0) result.SE_ID = SoundID_HEX; //exception for the first bank
-				return result;
-			}
-		}
-	}
-	result.Bank_Name = "ASS";
-	result.Bank_ID = 999;
-	result.SE_ID = 999;
-	return result;
-}
-
-const char* SoundLookUp(int SoundID)
-{
-	for (int i = 0; i < 1519; i++)
-	{
-		if (SENameLookUp[i].SE_ID == SoundID) return SENameLookUp[i].SE_Name;
-	}
-	return "ERROR";
-}
-
-void SoundDebug()
-{
-	DrawDebugRectangle(0.25f, 0.75f, 63.75f, 45);
-	ScaleDebugFont(16);
-	SetDebugFontColor(0xFF88FFAA);
-	if (EnableFontScaling || HorizontalResolution < 1024) DisplayDebugString(NJM_LOCATION(12, 1), "- SOUND QUEUE -");
-	else DisplayDebugString(NJM_LOCATION(24, 1), "- SOUND QUEUE -");
-	if (!EnableFontScaling && HorizontalResolution >= 1024) ScaleDebugFont(16); else ScaleDebugFont(10);
-	SetDebugFontColor(0xFFBFFF00);
-	DisplayDebugString(NJM_LOCATION(2, 4), "N   ID   PRI  TIME  FLAG   VOL MI/MX   PAN   PITCH    QNUM");
-	SetDebugFontColor(0xFFBFBFBF);
-	int ActiveSounds = 0;
-	for (unsigned int i = 0; i < 36; i++)
-	{
-		//Add data to debug info array
-		if (SoundQueue[i].PlayTime != 0)
-		{
-			SoundQueueDebug[i].Bank_ID = GetBankNumberAndID(SoundQueue[i].SoundID).Bank_ID;
-			SoundQueueDebug[i].SE_ID = GetBankNumberAndID(SoundQueue[i].SoundID).SE_ID;
-			SoundQueueDebug[i].EnumName = SoundLookUp(SoundQueue[i].SoundID);
-			SoundQueueDebug[i].PlayTime = SoundQueue[i].PlayTime;
-			SoundQueueDebug[i].Flags = SoundQueue[i].Flags;
-			SoundQueueDebug[i].VolumeCur = SoundQueue[i].CurrentVolume;
-			SoundQueueDebug[i].VolumeMax = SoundQueue[i].MaxVolume;
-		}
-		if (SoundQueue[i].PlayTime == 0) SetDebugFontColor(0xFFBF0000);
-		else
-		{
-			if (SoundQueueDebug[i].Flags & 0x4000)
-			{
-				if (SoundQueueDebug[i].Flags & 0x1000) SetDebugFontColor(0xFF00FFFF);
-				else SetDebugFontColor(0xFFBF00BF);
-			}
-			else if (SoundQueue[i].Panning != 0) SetDebugFontColor(0xFFFF7FB2);
-			else if (SoundQueueDebug[i].Flags & 0x2000) SetDebugFontColor(0xFF7F4040);
-			else if (SoundQueueDebug[i].Flags & 0x1000) SetDebugFontColor(0xFFBFBF00);
-			else if (SoundQueueDebug[i].Flags & 0x100) SetDebugFontColor(0xFFFF7F00);
-			else if (SoundQueueDebug[i].Flags & 0x200) SetDebugFontColor(0xFF00BF00);
-			else SetDebugFontColor(0xFFBFBFBF);
-			ActiveSounds++;
-		}
-		PrintDebugNumber(NJM_LOCATION(1, i + 1 + 5), i, 2);
-		if (SoundQueue[i].SoundID != -1)
-		{
-			if (DisplaySoundIDMode == 1) DisplayDebugStringFormatted(NJM_LOCATION(5, i + 1 + 5), "%03X", SoundQueue[i].SoundID, 4);
-			else if (DisplaySoundIDMode == 2) PrintDebugNumber(NJM_LOCATION(5, i + 1 + 5), SoundQueue[i].SoundID, 4);
-			else DisplayDebugStringFormatted(NJM_LOCATION(5, i + 1 + 5), "%01X/%02i", SoundQueueDebug[i].Bank_ID, SoundQueueDebug[i].SE_ID, 4);
-		}
-		if (SoundQueue[i].SoundID != -1) PrintDebugNumber(NJM_LOCATION(11, i + 1+ 5), SoundQueue[i].Priority, 2);
-		if (SoundQueue[i].PlayTime != 0) PrintDebugNumber(NJM_LOCATION(16, i + 1+ 5), SoundQueue[i].PlayTime, 4);
-		if (SoundQueue[i].PlayTime != 0 && SoundQueue[i].Flags != 0) DisplayDebugStringFormatted(NJM_LOCATION(22, i + 1+ 5), "%04X", SoundQueue[i].Flags);
-		if (SoundQueue[i].PlayTime != 0 && (SoundQueue[i].CurrentVolume != 0 || SoundQueue[i].MaxVolume != 0)) DisplayDebugStringFormatted(NJM_LOCATION(29, i + 1+ 5), "%04i/%04i", SoundQueue[i].CurrentVolume, SoundQueue[i].MaxVolume);
-		if (SoundQueue[i].PlayTime != 0 && SoundQueue[i].Panning != 0) DisplayDebugStringFormatted(NJM_LOCATION(41, i + 1+ 5), "%04i", SoundQueue[i].Panning);
-		if (SoundQueue[i].PlayTime != 0 && SoundQueue[i].PitchShift != 0) DisplayDebugStringFormatted(NJM_LOCATION(47, i + 1 + 5), "%05i", SoundQueue[i].PitchShift);
-		if (SoundQueue[i].PlayTime != 0 && SoundQueue[i].qnum != 0) DisplayDebugStringFormatted(NJM_LOCATION(57, i + 1+ 5), "%02i", SoundQueue[i].qnum);
-	}
-	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(2, 43), "ACTIVE SOUNDS: %d", ActiveSounds);
-}
-
-void SoundBankInfoDebug()
-{
-	DrawDebugRectangle(0.25f, 0.75f, 31.0f, 45);
-	ScaleDebugFont(16);
-	SetDebugFontColor(0xFF88FFAA);
-	if (EnableFontScaling || HorizontalResolution < 1024) DisplayDebugString(NJM_LOCATION(1, 1), "- SOUNDBANK INFO -");
-	else DisplayDebugString(NJM_LOCATION(6, 1), "- SOUNDBANK INFO -");
-	if (!EnableFontScaling && HorizontalResolution >= 1024) ScaleDebugFont(16); else ScaleDebugFont(10);
-	SetDebugFontColor(0xFFBFFF00);
-	DisplayDebugString(NJM_LOCATION(2, 4), "N  BANK  ENUM NAME");
-	SetDebugFontColor(0xFFBFBFBF);
-	int ActiveSounds = 0;
-	//Add data to debug info array
-	for (unsigned int i = 0; i < 36; i++)
-	{
-		if (SoundQueue[i].PlayTime != 0)
-		{
-			SoundQueueDebug[i].Bank_ID = GetBankNumberAndID(SoundQueue[i].SoundID).Bank_ID;
-			SoundQueueDebug[i].SE_ID = GetBankNumberAndID(SoundQueue[i].SoundID).SE_ID;
-			SoundQueueDebug[i].EnumName = SoundLookUp(SoundQueue[i].SoundID);
-			SoundQueueDebug[i].PlayTime = SoundQueue[i].PlayTime;
-			SoundQueueDebug[i].Flags = SoundQueue[i].Flags;
-			SoundQueueDebug[i].VolumeCur = SoundQueue[i].CurrentVolume;
-			SoundQueueDebug[i].VolumeMax = SoundQueue[i].MaxVolume;
-		}
-	}
-	for (unsigned int i = 0; i < 36; i++)
-	{
-		if (SoundQueue[i].PlayTime == 0) SetDebugFontColor(0xFFBF0000);	
-		else
-		{
-			if (SoundQueueDebug[i].Flags & 0x4000)
-			{
-				if (SoundQueueDebug[i].Flags & 0x1000) SetDebugFontColor(0xFF00FFFF);
-				else SetDebugFontColor(0xFFBF00BF);
-			}
-			else if (SoundQueue[i].Panning != 0) SetDebugFontColor(0xFFFF7FB2);
-			else if (SoundQueueDebug[i].Flags & 0x2000) SetDebugFontColor(0xFF7F4040);
-			else if (SoundQueueDebug[i].Flags & 0x1000) SetDebugFontColor(0xFFBFBF00);
-			else if (SoundQueueDebug[i].Flags & 0x100) SetDebugFontColor(0xFFFF7F00);
-			else if (SoundQueueDebug[i].Flags & 0x200) SetDebugFontColor(0xFF00BF00);
-			else SetDebugFontColor(0xFFBFBFBF);
-		}
-		PrintDebugNumber(NJM_LOCATION(1, i + 1 + 5), i, 2);
-		if (SoundQueueDebug[i].Bank_ID != -1) DisplayDebugStringFormatted(NJM_LOCATION(5, i + 1 + 5), "%01X/%02i", SoundQueueDebug[i].Bank_ID, SoundQueueDebug[i].SE_ID, 4);
-		if (SoundQueueDebug[i].EnumName != "") DisplayDebugStringFormatted(NJM_LOCATION(11, i + 1 + 5), SoundQueueDebug[i].EnumName, 4);
-	}
-	SetDebugFontColor(0xFFBF00BF);
-	DisplayDebugStringFormatted(NJM_LOCATION(1, 43), "3D");
-	SetDebugFontColor(0xFF00FFFF);
-	DisplayDebugStringFormatted(NJM_LOCATION(4, 43), "3D+OLD");
-	SetDebugFontColor(0xFFBFBF00);
-	DisplayDebugStringFormatted(NJM_LOCATION(11, 43), "OLD");
-	SetDebugFontColor(0xFFFF7F00);
-	DisplayDebugStringFormatted(NJM_LOCATION(15, 43), "POS");
-	SetDebugFontColor(0xFF00BF00);
-	DisplayDebugStringFormatted(NJM_LOCATION(19, 43), "VOL");
-	SetDebugFontColor(0xFFFF7FB2);
-	DisplayDebugStringFormatted(NJM_LOCATION(23, 43), "PAN");
-	SetDebugFontColor(0xFF7F4040);
-	DisplayDebugStringFormatted(NJM_LOCATION(27, 43), "FRQ");
-	SetDebugFontColor(0xFFBFBFBF);
 }
 
 static Sint32 __cdecl LoadPVM_r(const char* filename, NJS_TEXLIST* texlist);
@@ -818,15 +306,15 @@ static Trampoline FreezeFrameFilth_t(0x40C090, 0x40C096, FreezeFrameFilth_r);
 static void __cdecl FreezeFrameFilth_r()
 {
 	auto original = reinterpret_cast<decltype(FreezeFrameFilth_r)*>(FreezeFrameFilth_t.Target());
-	if (!FreezeFrame_Mode) original();
-	else if (FreezeFrame_Mode == 1)
+	switch (FreezeFrame_Mode)
 	{
+	case 0:
+		original();
+		break;
+	case 1:
 		original();
 		FreezeFrame_Mode = 2;
-	}
-	else if (FreezeFrame_Mode == 3)
-	{
-		original();
+		break;
 	}
 }
 
@@ -835,6 +323,23 @@ void DrawDebugModel(NJS_MODEL_SADX* a1)
 	njColorBlendingMode(0, NJD_COLOR_BLENDING_SRCALPHA);
 	njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_INVSRCALPHA);
 	DrawVisibleModel_Queue(a1, QueuedModelFlagsB_SomeTextureThing);
+}
+
+void RenderDeathPlanes(NJS_OBJECT* object)
+{
+	SetTextureToCommon();
+	njPushMatrix(0);
+	njControl3D_Backup();
+	njControl3D_Add(NJD_CONTROL_3D_CONSTANT_MATERIAL | NJD_CONTROL_3D_ENABLE_ALPHA | NJD_CONTROL_3D_CONSTANT_ATTR);
+	BackupConstantAttr();
+	AddConstantAttr(0, NJD_FLAG_USE_ALPHA);
+	SetMaterialAndSpriteColor_Float(0.5f, 1.0f, 0, 0);
+	DrawQueueDepthBias = 47952.0f;
+	ProcessModelNode(object, (QueuedModelFlagsB)4, 1.0f);
+	njPopMatrix(1u);
+	DrawQueueDepthBias = 0.0f;
+	RestoreConstantAttr();
+	njControl3D_Restore();
 }
 
 void DrawCollisionInfo_Player(CollisionInfo* a1)
@@ -862,15 +367,26 @@ static void __cdecl AddToCollisionListF_r(EntityData1* a1)
 			a1 == EntityData1Ptrs[5] || 
 			a1 == EntityData1Ptrs[6] || 
 			a1 == EntityData1Ptrs[7] ) 
-			&& a1->CollisionInfo) DrawCollisionInfo_Player(a1->CollisionInfo);
-		else if (a1->CollisionInfo) DrawCollisionInfo(a1->CollisionInfo);
+			&& a1->CollisionInfo) 
+				DrawCollisionInfo_Player(a1->CollisionInfo);
+		else if (a1->CollisionInfo) 
+				DrawCollisionInfo(a1->CollisionInfo);
 	}
 }
 
-void SendDebugMessage(const char* msg)
+Sint32 __cdecl njSetTexture_Hax(NJS_TEXLIST* texlist)
 {
-	DebugMessageTimer = 60;
-	DebugMessage = msg;
+	CurrentTexList = texlist;
+	CurrentTextureNum = 0;
+	if (CrashDebug)
+	{
+		if (CurTexList_Current != (int)CurrentTexList)
+		{
+			PrintDebug("Texlist change: %X\n", CurrentTexList);
+			CurTexList_Current = (int)CurrentTexList;
+		}
+	}
+	return Direct3D_SetTexList(texlist);
 }
 
 void __fastcall SetTextureHack(int index)
@@ -906,14 +422,16 @@ static void InitializeWhiteTexture()
 	njSetTextureInfo(&whitetexturetexinfo, (Uint16*)&whitetexturedata, NJD_TEXFMT_VQ | NJD_TEXFMT_RGB_565, 128, 128);
 	njSetTextureNameEx(whitetextures, &whitetexturetexinfo, (void*)0xFFFFFFFE, NJD_TEXATTR_GLOBALINDEX | NJD_TEXATTR_TYPE_MEMORY);
 	whitetextures[0].texaddr = (Uint32)TexMemList_PixelFormat(&whitetexturetexinfo, 237542221);
+	whitetexturetexlist.nbTexture = 1;
+	whitetexturetexlist.textures = whitetextures;
 }
 
 extern "C"
 {
-	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions &helperFunctions)
+	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions& helperFunctions)
 	{
 		InitializeWhiteTexture();
-		//Fix model rendering for debug collision shapes
+		// Fix model rendering for debug collision shapes
 		WriteCall((void*)0x79EAC5, DrawDebugModel);
 		WriteCall((void*)0x79EC11, DrawDebugModel);
 		WriteCall((void*)0x79ED09, DrawDebugModel);
@@ -927,13 +445,13 @@ extern "C"
 		WriteCall((void*)0x79F349, DrawDebugModel);
 		WriteCall((void*)0x79F3C8, DrawDebugModel);
 		WriteCall((void*)0x79F426, DrawDebugModel);
-		/*WriteData<1>((char*)0x780872, 0x02u); //Expand memory for debug string allocation
-		WriteData((int*)0x780897, 256); //Expand memory for debug string allocation
-		WriteData((int*)0x780892, 4096); //Expand memory for debug string allocation*/
+		/*WriteData<1>((char*)0x780872, 0x02u); // Expand memory for debug string allocation
+		WriteData((int*)0x780897, 256); // Expand memory for debug string allocation
+		WriteData((int*)0x780892, 4096); // Expand memory for debug string allocation*/
 		WriteJump((void*)0x403070, njSetTexture_Hax);
 		WriteCall((void*)0x44AF3B, RenderDeathPlanes);
 		WriteData((signed char**)0x44AF32, &DeathPlanesEnabled);
-		const IniFile *config = new IniFile(std::string(path) + "\\config.ini");
+		const IniFile* config = new IniFile(std::string(path) + "\\config.ini");
 		EnableFontScaling = config->getBool("General", "EnableFontScaling", false);
 		DebugSetting = config->getInt("General", "DefaultPage", 0);
 		delete config;
@@ -943,22 +461,32 @@ extern "C"
 		WriteCall((void*)0x78A382, SetTextureHack);
 		WriteCall((void*)0x78A589, SetTextureHack);
 		WriteCall((void*)0x78ECE3, SetTextureHack);
-		init_FreeMovements();
+		InitFreeMovement();
 	}
-	
+
 	__declspec(dllexport) void __cdecl OnInput()
 	{
 		// Info panels
-		if (KeyboardKeys[KEY_1].pressed) DebugSetting = 1;
-		if (KeyboardKeys[KEY_2].pressed) DebugSetting = 2;
-		if (KeyboardKeys[KEY_3].pressed) DebugSetting = 3;
-		if (KeyboardKeys[KEY_4].pressed) DebugSetting = 4;
-		if (KeyboardKeys[KEY_5].pressed) DebugSetting = 5; 
-		if (KeyboardKeys[KEY_6].pressed) DebugSetting = 6;
-		if (KeyboardKeys[KEY_7].pressed) DebugSetting = 7;
-		if (KeyboardKeys[KEY_8].pressed) DebugSetting = 8;
-		if (KeyboardKeys[KEY_9].pressed) DebugSetting = 9;
-		if (KeyboardKeys[KEY_0].pressed) DebugSetting = 0;
+		if (KeyboardKeys[KEY_1].pressed)
+			DebugSetting = 1;
+		if (KeyboardKeys[KEY_2].pressed)
+			DebugSetting = 2;
+		if (KeyboardKeys[KEY_3].pressed)
+			DebugSetting = 3;
+		if (KeyboardKeys[KEY_4].pressed)
+			DebugSetting = 4;
+		if (KeyboardKeys[KEY_5].pressed)
+			DebugSetting = 5;
+		if (KeyboardKeys[KEY_6].pressed)
+			DebugSetting = 6;
+		if (KeyboardKeys[KEY_7].pressed)
+			DebugSetting = 7;
+		if (KeyboardKeys[KEY_8].pressed)
+			DebugSetting = 8;
+		if (KeyboardKeys[KEY_9].pressed)
+			DebugSetting = 9;
+		if (KeyboardKeys[KEY_0].pressed)
+			DebugSetting = 0;
 		// Texture toggle
 		if (KeyboardKeys[KEY_T].pressed)
 		{
@@ -968,8 +496,9 @@ extern "C"
 		// Fog toggle
 		if (KeyboardKeys[KEY_F].pressed)
 		{
-			FogToggle = !FogToggle;
-			SendDebugMessage(FogToggle ? "FOG: ON " : "FOG: OFF");
+			FogEnable = !FogEnable;
+			gFog.u8Enable = (Uint8)FogEnable;
+			SendDebugMessage(gFog.u8Enable ? "FOG: ON " : "FOG: OFF");
 		}
 		// Collision toggle
 		if (ControllerPointers[0]->PressedButtons & Buttons_C || KeyboardKeys[KEY_C].pressed)
@@ -1019,14 +548,15 @@ extern "C"
 			// LS Palette
 		case 8:
 			if (KeyboardKeys[KEY_H].pressed) CurrentPalette++;
-			if (CurrentPalettes[CurrentPalette] == -1) CurrentPalette = 0;
+			if (LSPaletteArray[CurrentPalette] == -1) CurrentPalette = 0;
 			// Stage Lights
 		case 9:
 			if (KeyboardKeys[KEY_H].pressed) CurrentStageLight++;
 			if (CurrentLights[CurrentStageLight] == -1) CurrentStageLight = 0;
 		}
 		// Crash log toggle
-		if (KeyboardKeys[KEY_P].pressed) CrashDebug = !CrashDebug;
+		if (KeyboardKeys[KEY_P].pressed)
+			CrashDebug = !CrashDebug;
 		// Freeze frame/frame advance toggle
 		if ((GameState != 0 && KeyboardKeys[KEY_PAUSEBREAK].pressed && !FreezeFrame_Mode) || FreezeFrame_Mode == 3)
 		{
@@ -1091,9 +621,7 @@ extern "C"
 			SpeedHack = !SpeedHack;
 			SendDebugMessage(SpeedHack ? "SPEED HACK: ON" : "SPEED HACK: OFF");
 			if (!SpeedHack && FrameIncrementCurrent != 1)
-			{
 				FrameIncrement = FrameIncrementCurrent = 1;
-			}
 		}
 		if (KeyboardKeys[KEY_PAGEUP].pressed)
 		{
@@ -1105,7 +633,6 @@ extern "C"
 			FrameIncrementCurrent = max(1, FrameIncrementCurrent - 1);
 			SendDebugMessage("GAME SPEED DOWN");
 		}
-
 	}
 
 	__declspec(dllexport) void __cdecl OnFrame()
@@ -1135,15 +662,15 @@ extern "C"
 			}
 			switch (DebugSetting)
 			{
-			case 1: GameDebug(); break;
-			case 2: PlayerDebug(); break;
-			case 3: CameraDebug(); break;
-			case 4: InputDebug(); break;
-			case 5: FogDebug(); break;
-			case 6: SoundDebug(); break;
-			case 7: SoundBankInfoDebug(); break;
-			case 8: LSPaletteDebug(); break;
-			case 9: StageLightDebug(); break;
+			case 1: GameInfo(); break;
+			case 2: PlayerInfo(); break;
+			case 3: CameraInfo(); break;
+			case 4: InputInfo(); break;
+			case 5: FogInfo(); break;
+			case 6: SoundInfo(); break;
+			case 7: SoundBankInfo(); break;
+			case 8: LSPaletteInfo(); break;
+			case 9: StageLightInfo(); break;
 			}
 		}
 		// Reset stuff after character dies etc.

@@ -1,13 +1,14 @@
 #pragma once
 
-enum FreeMovAction {
-	FreeMovements = 110
+enum FreeMovAction 
+{
+	FreeMovement = 110
 };
 
 
 // void __usercall Debug_FreeMovements(EntityData1* a1@<esi>)
 static const void* const FreeMovePtr = (void*)0x492170;
-static inline void Debug_FreeMovements(EntityData1* a1)
+static inline void Debug_FreeMovement(EntityData1* a1)
 {
 	__asm
 	{
@@ -16,4 +17,4 @@ static inline void Debug_FreeMovements(EntityData1* a1)
 	}
 }
 
-void init_FreeMovements();
+void InitFreeMovement();
