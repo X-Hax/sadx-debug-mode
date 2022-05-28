@@ -48,7 +48,7 @@ void DrawPaletteGradientCallback(int diffuse_or_specular)
 		y_bottom = (float)VerticalResolution;
 		break;
 	}
-	if (EnableFontScaling || HorizontalResolution < 1024)
+	if (HorizontalResolution < 1024)
 	{
 		// Don't draw background at 640x480
 		if (diffuse_or_specular == -1)
