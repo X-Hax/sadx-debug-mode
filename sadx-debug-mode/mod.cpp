@@ -22,6 +22,7 @@ DataPointer(int, CutsceneID, 0x3B2C570);
 DataPointer(char, CurrentCharacterSelection, 0x3B2A2FD);
 DataPointer(char, FreezeFrameByte1, 0x78BA50);
 DataPointer(char, FreezeFrameByte2, 0x78B880);
+DataPointer(char, CutsceneFramerateMode, 0x00431488);
 
 char DebugSetting = 0; // Menu ID
 bool FreeCamEnabled = false;
@@ -630,7 +631,11 @@ extern "C"
 			SpeedHack = !SpeedHack;
 			SendDebugMessage(SpeedHack ? "SPEED HACK: ON" : "SPEED HACK: OFF");
 			if (!SpeedHack && FrameIncrementCurrent != 1)
+			{
 				FrameIncrement = FrameIncrementCurrent = 1;
+				if (current_event != -1 && CutsceneFramerateMode == 2)
+					dsInitInt(2, 1);
+			}
 		}
 		if (KeyboardKeys[KEY_PAGEUP].pressed)
 		{
@@ -651,7 +656,16 @@ extern "C"
 		ScaleDebugFont(16);
 		// Apply speed hack
 		if (SpeedHack)
+		{
 			FrameIncrement = FrameIncrementCurrent;
+			if (current_event != -1 && CutsceneFramerateMode == 2)
+			{
+				if (FrameIncrementCurrent == 1)
+					dsInitInt(2, 1);
+				else
+					njSetWaitVsyncCount(2);
+			}
+		}
 		// Display data
 		if (!MissedFrames)
 		{
