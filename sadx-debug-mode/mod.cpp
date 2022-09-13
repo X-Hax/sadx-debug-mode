@@ -10,6 +10,7 @@ void LSPaletteInfo();
 void SoundInfo();
 void SoundBankInfo();
 void StageLightInfo();
+void LanternPaletteInfo();
 
 FunctionPointer(void, DrawCollisionInfo, (CollisionInfo* collision), 0x79F4D0);
 FastcallFunctionPointer(void, stSetTexture, (int index), 0x0078D140);
@@ -436,6 +437,14 @@ static void InitializeWhiteTexture()
 	whitetexturetexlist.textures = whitetextures;
 }
 
+void PaletteInfo()
+{
+	if (GetModuleHandle(L"sadx-dc-lighting") != nullptr)
+		LanternPaletteInfo();
+	else
+		LSPaletteInfo();
+}
+
 extern "C"
 {
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions& helperFunctions)
@@ -692,7 +701,7 @@ extern "C"
 			case 5: FogInfo(); break;
 			case 6: SoundInfo(); break;
 			case 7: SoundBankInfo(); break;
-			case 8: LSPaletteInfo(); break;
+			case 8: PaletteInfo(); break;
 			case 9: StageLightInfo(); break;
 			}
 		}

@@ -81,6 +81,7 @@
   <ItemGroup>
     <ClCompile Include="FreeCam.cpp" />
     <ClCompile Include="FreeMovement.cpp" />
+    <ClCompile Include="InfoLanternPL.cpp" />
     <ClCompile Include="InfoLSPalette.cpp" />
     <ClCompile Include="InfoSound.cpp" />
     <ClCompile Include="InfoStageLights.cpp" />

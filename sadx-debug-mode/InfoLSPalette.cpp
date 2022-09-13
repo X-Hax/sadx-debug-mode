@@ -7,25 +7,6 @@ static NJS_COLOR SpecularGradient[256];
 int LSPaletteArray[] = { -1, -1, -1, -1, -1, -1 };
 int CurrentPalette = 0;
 
-void DrawPaletteGradientBackground(float YPos)
-{
-	int scale = (int)((float)HorizontalResolution / 640.0f);
-	float startpos = ((float)HorizontalResolution - 258.0f * scale) / 2.0f;
-	if (EnableFontScaling || HorizontalResolution < 1024)
-	{
-		startpos = 200.0f;
-		scale = 1;
-		YPos = YPos - 185.0f - ((float)VerticalResolution - 480.0f);
-	}
-	for (int i = 0; i < 258; i++)
-	{
-		for (int s = 0; s < scale; s++)
-		{
-			ds_DrawBoxFill2D(startpos + i * scale - s, YPos - 64 - scale, startpos + 1 + i * scale - s, YPos + 16 + scale, -1.2f, 0xA0000000);
-		}
-	}
-}
-
 void DrawPaletteGradientCallback(int diffuse_or_specular)
 {
 	float y_top;
@@ -128,8 +109,7 @@ void LSPaletteInfo()
 	NJS_COLOR SP2Color;
 	ScaleDebugFont(16);
 	DrawDebugRectangle(1.75f, 0.75f, 29, 29);
-	if (GetModuleHandle(L"sadx-dc-lighting") != nullptr) SetDebugFontColor(0xFFFF0000);
-	else SetDebugFontColor(0xFF88FFAA);
+	SetDebugFontColor(0xFF88FFAA);
 	DisplayDebugString(NJM_LOCATION(6, 1), "- LS PALETTE INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "TYPE : %X", LightPaletteData[LSPaletteArray[CurrentPalette]].Type);
