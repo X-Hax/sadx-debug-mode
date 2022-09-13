@@ -562,7 +562,7 @@ extern "C"
 			// Stage Lights
 		case 9:
 			if (KeyboardKeys[KEY_H].pressed) CurrentStageLight++;
-			if (CurrentLights[CurrentStageLight] == -1) CurrentStageLight = 0;
+			if (CurrentStageLight > 3) CurrentStageLight = 0;
 		}
 		// Crash log toggle
 		if (KeyboardKeys[KEY_P].pressed)
