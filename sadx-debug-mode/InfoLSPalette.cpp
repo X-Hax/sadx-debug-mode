@@ -50,7 +50,7 @@ void DrawPaletteGradientCallback(int diffuse_or_specular)
 		for (int i = 0; i < 256; i++)
 		{
 			for (int s = 0; s < scale; s++)
-				ds_DrawBoxFill2D(x_left + i * scale - s, y_top, x_left + 1 + i * scale - s, y_bottom, -1.2f, palette[i].color);
+				DrawColoredLine(x_left + i * scale - s, y_top, x_left + 1 + i * scale - s, y_bottom, palette[i]);
 		}
 	}
 }

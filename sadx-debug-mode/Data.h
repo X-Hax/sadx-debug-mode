@@ -17,6 +17,7 @@ void BackupDebugFontSettings();
 void RestoreDebugFontSettings();
 void ScaleDebugFont(int scale);
 void DrawDebugRectangle(float leftchars, float topchars, float numchars_horz, float numchars_vert);
+void DrawColoredLine(float left, float top, float right, float bottom, NJS_COLOR color);
 void SendDebugMessage(const char* msg);
 
 #pragma warning(pop)

@@ -50,6 +50,20 @@ void DrawDebugRectangle(float leftchars, float topchars, float numchars_horz, fl
 	njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_INVSRCALPHA);
 }
 
+void DrawColoredLine(float left, float top, float right, float bottom, NJS_COLOR color)
+{
+	NJS_POINT2 rectpos[] = { { 0,0 }, { 0,0 },{ 0,0 },{ 0,0 } };
+	NJS_COLOR rectcol[] = { 0, 0, 0, 0 };
+	NJS_POINT2COL rect = { rectpos, rectcol, NULL, 4 };
+	rect.p[0] = { left, top };
+	rect.p[1] = { left, bottom };
+	rect.p[2] = { right, top };
+	rect.p[3] = { right, bottom };
+	rect.col[0] = rect.col[1] =
+		rect.col[2] = rect.col[3] = color;
+	___SAnjDrawPolygon2D(&rect, 4, -1.2f, NJD_TRANSPARENT | NJD_FILL | NJD_DRAW_CONNECTED);
+}
+
 void ScaleDebugFont(int scale)
 {
 	float FontScale = 1.0f;
