@@ -8,14 +8,23 @@ Debug Mode is a mod for Sonic Adventure DX PC (2004) that adds various debug fea
 2) If you press the Z button on the controller (or the B key on the keyboard) while also holding the A button (or its keyboard counterpart - X key by default), vanilla debug mode will be enabled. To disable it, press the same button/key combination again.
 3) Press P on the keyboard to enable Crash Log. This will log each texture list and object code change to the SADX Mod Loader log/console.
 4) Press Pause/Break on the keyboard the freeze and unfreeze the game. Press Insert to advance one frame forward.
-5) In the Player and Camera screens, press H on the keyboard to display angles as hexadecimal values. In the Sound Queue screen, press H on the keyboard to toggle between decimal, hexadecimal and soundbank representations of sound IDs. In the LS Palette and Stage Lights screens, press H on the keyboard to toggle between multiple LS Palette Data and Stage Light Data entries for the current stage.
+5) Use the H key to toggle between various modes in debug info screens (see below).
 6) Press the C button on the controller or the C key on the keyboard to enable or disable collision data display.
 7) Press T to toggle textures.
 8) Press F to toggle fog.
 9) Press Y on the keyboard to toggle free camera (see below for details).
 10) Press END to toggle the speed hack. When the speed hack is enabled, press Page Up and Page Down to control how fast the game runs. Note: the game cannot run slower than its original speed.
+11) Press L to toggle debug palettes when the Lantern Engine mod is enabled.
 
 For better legibility enable the "Hide HUD" code in SADX Mod Manager before running the game with this mod.
+
+**H key functionality**
+
+The H key switches between different modes in debug info screens.
+- In the Player and Camera screens, it switches between decimal and hexadecimal representation of angles. 
+- In the Sound Queue screen, it switches between decimal, hexadecimal and soundbank representations of sound IDs.
+- In the LS Palette and Stage Lights screens, it switches between multiple LS Palette Data and Stage Light Data entries for the current stage.
+- In the Lantern Palette Info screen it cycles through debug palettes.
 
 **Using the free camera mode**
 
@@ -33,11 +42,10 @@ This is SADX' built-in debug mode (what's left of it). Collision objects are vis
 When this mode is enabled, you can move the character freely through any obstacles. Use the analog stick to position the character on the X and Z plane. Hold the X button to move the character up and down.
 
 **Notes and known issues**
-1) The information in LS Palette and Stage Lights screens is irrelevant when using Lantern Engine.
+1) The information in the Stage Lights screen is irrelevant when using Lantern Engine.
 2) Some transparent objects may flicker when using frame advance.
 3) Some debug text may not display properly when using frame advance.
 4) Pressing (as opposed to holding) buttons may not work correctly when using freeze frame/frame advance.
-5) The speed hack may not always work reliably, especially in cutscenes.
 
 **Credits**
 

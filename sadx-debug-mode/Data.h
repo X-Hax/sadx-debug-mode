@@ -4,6 +4,7 @@
 #pragma warning(disable: 4267 4838)
 
 extern bool EnableFontScaling;
+extern bool LanternLoaded;
 extern int CurrentPalette;
 extern int LSPaletteArray[];
 extern int DisplaySoundIDMode;
@@ -12,6 +13,7 @@ extern int CurrentLights[];
 extern char DebugSetting;
 extern int DebugMessageTimer;
 extern const char* DebugMessage;
+extern const HelperFunctions* helperFunctionsGlobal;
 
 void BackupDebugFontSettings();
 void RestoreDebugFontSettings();

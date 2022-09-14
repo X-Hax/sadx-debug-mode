@@ -4,6 +4,7 @@
 #include "Data.h"
 #include "FreeCam.h"
 #include "FreeMovement.h"
+#include "Lantern.h"
 #include "Keys.h"
 
 void LSPaletteInfo();
@@ -11,6 +12,10 @@ void SoundInfo();
 void SoundBankInfo();
 void StageLightInfo();
 void LanternPaletteInfo();
+void SetLanternDebugPalette(LanternDebugPaletteType type);
+void LanternDebug_OnFrame();
+
+const HelperFunctions* helperFunctionsGlobal;
 
 FunctionPointer(void, DrawCollisionInfo, (CollisionInfo* collision), 0x79F4D0);
 FastcallFunctionPointer(void, stSetTexture, (int index), 0x0078D140);
@@ -28,6 +33,7 @@ DataPointer(char, CutsceneFramerateMode, 0x00431488);
 char DebugSetting = 0; // Menu ID
 bool FreeCamEnabled = false;
 
+bool LanternLoaded;
 static bool FogEnable = true;
 static bool CollisionDebug = false;
 static Sint8 DeathPlanesEnabled = -1;
@@ -44,6 +50,9 @@ static int FrameIncrementCurrent = 1;
 static bool FreezeFrame_Pressed = false;
 static int FreezeFrame_Mode = 0;
 static Uint8 FreezeFrameBackupBytes[] = { 0xC3u, 0xC3u };
+
+bool LanternDebug = false;
+LanternDebugPaletteType LanternDebugMode = LanternDebugPaletteType::None;
 
 static char DebugMsgBuffer[32];
 static std::string FreeCamModeStrings[] = { "OFF", "LOOK", "MOVE", "ZOOM", "LOCKED" };
@@ -439,7 +448,7 @@ static void InitializeWhiteTexture()
 
 void PaletteInfo()
 {
-	if (GetModuleHandle(L"sadx-dc-lighting") != nullptr)
+	if (LanternLoaded)
 		LanternPaletteInfo();
 	else
 		LSPaletteInfo();
@@ -449,6 +458,8 @@ extern "C"
 {
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions& helperFunctions)
 	{
+		LanternLoaded = GetModuleHandle(L"sadx-dc-lighting") != nullptr;
+		helperFunctionsGlobal = &helperFunctions;
 		InitializeWhiteTexture();
 		// Fix model rendering for debug collision shapes
 		WriteCall((void*)0x79EAC5, DrawDebugModel);
@@ -525,6 +536,14 @@ extern "C"
 			CollisionDebug = !CollisionDebug;
 			SendDebugMessage(CollisionDebug ? "COLLI DRAW: ON " : "COLLI DRAW: OFF");
 		}
+		// Lantern debug toggle
+		if (KeyboardKeys[KEY_L].pressed && LanternLoaded)
+		{
+			LanternDebug = !LanternDebug;
+			if (LanternDebug)
+				LanternDebugMode = (LanternDebugPaletteType)(max((int)LanternDebugMode, 1));
+			SetLanternDebugPalette(LanternDebug ? LanternDebugMode : LanternDebugPaletteType::None);
+		}
 		// Cycle info panels
 		if ((ControllerPointers[0]->PressedButtons & Buttons_Z || Key_B.pressed) && !(ControllerPointers[0]->HeldButtons & Buttons_A))
 		{
@@ -564,10 +583,23 @@ extern "C"
 		case 6:
 			if (KeyboardKeys[KEY_H].pressed) DisplaySoundIDMode++;
 			if (DisplaySoundIDMode > 2) DisplaySoundIDMode = 0;
-			// LS Palette
+			// LS Palette / Lantern
 		case 8:
-			if (KeyboardKeys[KEY_H].pressed) CurrentPalette++;
-			if (LSPaletteArray[CurrentPalette] == -1) CurrentPalette = 0;
+			if (KeyboardKeys[KEY_H].pressed)
+			{
+				if (LanternDebug)
+				{
+					LanternDebugMode = (LanternDebugPaletteType)((int)LanternDebugMode + 1);
+					if (LanternDebugMode > LanternDebugPaletteType::Fullbright)
+						LanternDebugMode = LanternDebugPaletteType::Selection;
+					SetLanternDebugPalette(LanternDebugMode);
+				}
+				else
+				{
+					CurrentPalette++;
+					if (LSPaletteArray[CurrentPalette] == -1) CurrentPalette = 0;
+				}
+			}
 			// Stage Lights
 		case 9:
 			if (KeyboardKeys[KEY_H].pressed) CurrentStageLight++;
@@ -716,6 +748,8 @@ extern "C"
 		RestoreDebugFontSettings();
 		// Free camera stuff
 		FreeCam_OnFrame();
+		// Lantern debug
+		LanternDebug_OnFrame();
 	}
 	__declspec(dllexport) ModInfo SADXModInfo = { ModLoaderVer };
 }

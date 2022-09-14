@@ -19,7 +19,7 @@ void StageLightInfo()
 	NJS_COLOR AmbColor = { 0 };
 	ScaleDebugFont(16);
 	DrawDebugRectangle(1.75f, 0.75f, 29, 22.5f);
-	SetDebugFontColor(GetModuleHandle(L"sadx-dc-lighting") != nullptr ? 0xFFFF0000 : 0xFF88FFAA);
+	SetDebugFontColor(LanternLoaded ? 0xFFFF0000 : 0xFF88FFAA);
 	DisplayDebugString(NJM_LOCATION(5, 1), "- STAGE LIGHTS INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, 3), "INDEX: %d", le_env[CurrentStageLight].ligNo);

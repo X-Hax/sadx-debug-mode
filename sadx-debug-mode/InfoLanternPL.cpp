@@ -1,16 +1,15 @@
 #include <SADXModLoader.h>
 #include "Data.h"
+#include "Lantern.h"
+#include <fstream>
+#include <vector>
 
 static NJS_COLOR DiffusePalettes[10][256];
 static NJS_COLOR SpecularPalettes[10][256];
+static ColorPair PaletteBackup[8][256];
+static bool PalettesBackedUp = false;
 
-struct ColorPair
-{
-	NJS_COLOR diffuse;
-	NJS_COLOR specular;
-};
-
-DataArray(ColorPair[256], LSPAL, 0x3B12210, 10);
+// Info and gradient stuff
 
 void FillPalettes()
 {
@@ -53,12 +52,107 @@ void DrawPalettes()
 void LanternPaletteInfo()
 {
 	bool noscale = (EnableFontScaling || HorizontalResolution < 1024);
-	DrawDebugRectangle(1.75f, 0.75f, 38, noscale ? 23 : 37);
+	DrawDebugRectangle(1.75f, 0.75f, 38.0f, noscale ? 23.0f : 37.0f);
 	SetDebugFontColor(0xFF88FFAA);
 	DisplayDebugString(NJM_LOCATION(8, 1), "- LANTERN PALETTE INFO -");
 	SetDebugFontColor(0xFFBFBFBF);
-	DisplayDebugStringFormatted(NJM_LOCATION(3, noscale ? 19 : 33), "RY : %08X     RZ : %08X", CasinoLightRotation_Y, CasinoLightRotation_Z);
+	DisplayDebugStringFormatted(NJM_LOCATION(3, noscale ? 19 : 33), "RY : %08d     RZ : %08d", CasinoLightRotation_Y, CasinoLightRotation_Z);
 	DisplayDebugStringFormatted(NJM_LOCATION(3, noscale ? 21 : 35), "X: %.4f  Y: %.4f  Z: %.4f", CurrentStageLights[0].direction.x, CurrentStageLights[0].direction.y, CurrentStageLights[0].direction.z);
 	FillPalettes();
 	DrawPalettes();
+}
+
+// Debug palettes
+
+void BackupLanternPalettes()
+{
+	memcpy(PaletteBackup, LSPAL.data(), sizeof(ColorPair) * 2048);
+	PalettesBackedUp = true;
+}
+
+void RestoreLanternPalettes()
+{
+	memcpy(LSPAL.data(), PaletteBackup, sizeof(ColorPair) * 2048);
+	PalettesBackedUp = false;
+	lig_convHalfBrightPalette(9, 0); // Rebuild atlas
+}
+
+void LoadPalettes(const char* path)
+{
+	if (!PalettesBackedUp)
+		BackupLanternPalettes();
+
+	std::ifstream file(path, std::ios::binary);
+
+	if (!file.is_open())
+	{
+		PrintDebug("Debug lantern palette not found: %s\n", path);
+		return;
+	}
+
+	PrintDebug("Loading debug lantern palette: %s\n", path);
+
+	std::vector<ColorPair> color_data;
+
+	do
+	{
+		ColorPair pair = {};
+		file.read(reinterpret_cast<char*>(&pair.diffuse), sizeof(NJS_COLOR));
+		file.read(reinterpret_cast<char*>(&pair.specular), sizeof(NJS_COLOR));
+		color_data.push_back(pair);
+		file.peek();
+	} while (!file.eof());
+
+	file.close();
+
+	memset(LSPAL.data(), 0, sizeof(ColorPair) * 2048);
+	memcpy(LSPAL.data(),
+		color_data.data(),
+		min(sizeof(ColorPair) * color_data.size(), sizeof(ColorPair) * 2048));
+	lig_convHalfBrightPalette(9, 0); // Rebuild atlas
+}
+
+void SetLanternDebugPalette(LanternDebugPaletteType type)
+{
+	switch (type)
+	{
+		case LanternDebugPaletteType::None:
+			RestoreLanternPalettes();
+			SendDebugMessage("DEBUG PALETTES: OFF");
+			break;
+		case LanternDebugPaletteType::Selection:
+			LoadPalettes(helperFunctionsGlobal->GetReplaceablePath("system\\lantern\\select.bin"));
+			SendDebugMessage("DEBUG PALETTES: SELECTION");
+			break;
+		case LanternDebugPaletteType::SelectionFull:
+			LoadPalettes(helperFunctionsGlobal->GetReplaceablePath("system\\lantern\\select2.bin"));
+			SendDebugMessage("DEBUG PALETTES: SELECTION FULL");
+			break;
+		case LanternDebugPaletteType::Direction:
+			LoadPalettes(helperFunctionsGlobal->GetReplaceablePath("system\\lantern\\dir.bin"));
+			SendDebugMessage("DEBUG PALETTES: DIRECTION");
+			break;
+		case LanternDebugPaletteType::Index:
+			LoadPalettes(helperFunctionsGlobal->GetReplaceablePath("system\\lantern\\index.bin"));
+			SendDebugMessage("DEBUG PALETTES: INDEX");
+			break;
+		case LanternDebugPaletteType::Fullbright:
+			LoadPalettes(helperFunctionsGlobal->GetReplaceablePath("system\\lantern\\fullbright.bin"));
+			SendDebugMessage("DEBUG PALETTES: FULLBRIGHT");
+			break;
+	}
+}
+
+void LanternDebug_OnFrame()
+{
+	if (!LanternLoaded || !LanternDebug)
+		return;
+	bool BackupOk = LSPAL[0][0].diffuse.argb.a == 0xA1 && LSPAL[0][1].diffuse.argb.a == 0xB2 &&
+		LSPAL[0][2].diffuse.argb.a == 0xC3 && LSPAL[0][3].diffuse.argb.a == 0xD4;
+	if (!BackupOk)
+	{
+		BackupLanternPalettes();
+		LanternDebugMode = (LanternDebugPaletteType)(max((int)LanternDebugMode, 1));
+		SetLanternDebugPalette(LanternDebug ? LanternDebugMode : LanternDebugPaletteType::None);
+	}
 }
