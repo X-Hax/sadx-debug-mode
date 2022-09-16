@@ -35,7 +35,7 @@ bool FreeCamEnabled = false;
 
 bool LanternLoaded;
 static bool FogEnable = true;
-static bool CollisionDebug = false;
+static int CollisionDebug = 0;
 static Sint8 DeathPlanesEnabled = -1;
 
 static bool TextureDebug = false;
@@ -376,7 +376,7 @@ static void __cdecl AddToCollisionListF_r(EntityData1* a1)
 	{
 		auto original = reinterpret_cast<decltype(AddToCollisionListF_r)*>(AddToCollisionListF_t.Target());
 		original(a1);
-		if (CollisionDebug)
+		if (CollisionDebug == 1 || CollisionDebug == 3)
 		{
 			if (
 			(a1 == EntityData1Ptrs[0] || 
@@ -533,8 +533,16 @@ extern "C"
 		// Collision toggle
 		if (ControllerPointers[0]->PressedButtons & Buttons_C || KeyboardKeys[KEY_C].pressed)
 		{
-			CollisionDebug = !CollisionDebug;
-			SendDebugMessage(CollisionDebug ? "COLLI DRAW: ON " : "COLLI DRAW: OFF");
+			CollisionDebug++;
+			if (CollisionDebug > 3)
+				CollisionDebug = 0;
+			switch (CollisionDebug)
+			{
+				case 0: SendDebugMessage("COLLI DRAW: OFF"); break;
+				case 1: SendDebugMessage("COLLI DRAW: INFO"); break;
+				case 2: SendDebugMessage("COLLI DRAW: ENTITY"); break;
+				case 3: SendDebugMessage("COLLI DRAW: ALL"); break;
+			}	
 		}
 		// Lantern debug toggle
 		if (KeyboardKeys[KEY_L].pressed && LanternLoaded)
@@ -710,6 +718,43 @@ extern "C"
 		// Display data
 		if (!MissedFrames)
 		{
+			// Display dynamic collision
+			if (CollisionDebug >= 2)
+			{
+				for (int c = 0; c < numMobileEntry; c++)
+				{
+					njControl3D_Backup();
+					BackupConstantAttr();
+					njSetConstantAttr(0, 0);
+					njControl3D_Add(NJD_CONTROL_3D_CONSTANT_ATTR | NJD_CONTROL_3D_CONSTANT_MATERIAL);
+					AddConstantAttr(0, NJD_FLAG_USE_ALPHA);
+					njPushMatrix(0);
+					njColorBlendingMode(NJD_SOURCE_COLOR, NJD_COLOR_BLENDING_SRCALPHA);
+					njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_ONE);
+					float r, b, g;
+					if (MobileEntry[c].slAttribute & ColFlags_Solid)
+						r = g = b = 0.8f;
+					if (MobileEntry[c].slAttribute & ColFlags_Hurt)
+						g = b = 0.0f;
+					else if (MobileEntry[c].slAttribute & 0x60000000) // Dynamic
+					{
+						r = 0.0f;
+						g = 1.0f;
+						b = 0.0f;
+					}
+					else if (MobileEntry[c].slAttribute & ColFlags_Water || MobileEntry[c].slAttribute & 0x400000) // Water
+					{
+						r = 0.0f;
+						g = 0.4f;
+						b = 0.9f;
+					}
+					SetMaterial(0.8f, r, g, b);
+					late_DrawObjectClip(MobileEntry[c].pObject, LATE_MAT, MobileEntry[c].pTask->twp->scl.x);
+					njPopMatrix(1u);
+					RestoreConstantAttr();
+					njControl3D_Restore();
+				}
+			}
 			if (CrashDebug)
 			{
 				SetDebugFontColor(0xFFFF0000);

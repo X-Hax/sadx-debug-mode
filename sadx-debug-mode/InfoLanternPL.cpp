@@ -68,6 +68,7 @@ void BackupLanternPalettes()
 {
 	memcpy(PaletteBackup, LSPAL.data(), sizeof(ColorPair) * 2048);
 	PalettesBackedUp = true;
+	//PrintDebug("Backed up original lantern palettes\n");
 }
 
 void RestoreLanternPalettes()
@@ -75,6 +76,7 @@ void RestoreLanternPalettes()
 	memcpy(LSPAL.data(), PaletteBackup, sizeof(ColorPair) * 2048);
 	PalettesBackedUp = false;
 	lig_convHalfBrightPalette(9, 0); // Rebuild atlas
+	//PrintDebug("Restored original lantern palettes\n");
 }
 
 void LoadPalettes(const char* path)
@@ -90,7 +92,7 @@ void LoadPalettes(const char* path)
 		return;
 	}
 
-	PrintDebug("Loading debug lantern palette: %s\n", path);
+	//PrintDebug("Loading debug lantern palette: %s\n", path);
 
 	std::vector<ColorPair> color_data;
 

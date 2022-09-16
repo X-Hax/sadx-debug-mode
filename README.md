@@ -9,7 +9,7 @@ Debug Mode is a mod for Sonic Adventure DX PC (2004) that adds various debug fea
 3) Press P on the keyboard to enable Crash Log. This will log each texture list and object code change to the SADX Mod Loader log/console.
 4) Press Pause/Break on the keyboard the freeze and unfreeze the game. Press Insert to advance one frame forward.
 5) Use the H key to toggle between various modes in debug info screens (see below).
-6) Press the C button on the controller or the C key on the keyboard to enable or disable collision data display.
+6) Press the C button on the controller or the C key on the keyboard to toggle collision data display.
 7) Press T to toggle textures.
 8) Press F to toggle fog.
 9) Press Y on the keyboard to toggle free camera (see below for details).
