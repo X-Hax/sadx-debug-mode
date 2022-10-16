@@ -731,15 +731,21 @@ extern "C"
 					njPushMatrix(0);
 					njColorBlendingMode(NJD_SOURCE_COLOR, NJD_COLOR_BLENDING_SRCALPHA);
 					njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_ONE);
+					NJS_OBJECT* pObject = MobileEntry[c].pObject;
 					float r, b, g;
+					// Set color
 					if (MobileEntry[c].slAttribute & ColFlags_Solid)
 						r = g = b = 0.8f;
 					if (MobileEntry[c].slAttribute & ColFlags_Hurt)
-						g = b = 0.0f;
-					else if (MobileEntry[c].slAttribute & 0x60000000) // Dynamic
 					{
-						r = 0.0f;
-						g = 1.0f;
+						r = 1.0f;
+						g = 0.0f;
+						b = 0.0f;
+					}
+					else if (MobileEntry[c].slAttribute & 0x20000000) // Unknown
+					{
+						r = 1.0f;
+						g = 0.5f;
 						b = 0.0f;
 					}
 					else if (MobileEntry[c].slAttribute & ColFlags_Water || MobileEntry[c].slAttribute & 0x400000) // Water
@@ -748,7 +754,37 @@ extern "C"
 						g = 0.4f;
 						b = 0.9f;
 					}
+					else if (MobileEntry[c].slAttribute & 0x8000000) // Use position?
+					{
+						r = 1.0f;
+						g = 1.0f;
+						b = 1.0f;
+					}
+					else if (MobileEntry[c].slAttribute & 0x40000000) // Use rotation?
+					{
+						r = 0.5f;
+						g = 0.0f;
+						b = 1.0f;
+					}
 					SetMaterial(0.8f, r, g, b);
+					// Set position/rotation from flags
+					if (MobileEntry[c].slAttribute & 0x8000000) // Dynamic
+					{
+						SetMaterial(1.0f, 1.0f, 0, 0);
+						if (MobileEntry[c].slAttribute & 0x10000000) // Use rotation (unk23)
+						{
+							Angle z = pObject->ang[2];
+							if (z)
+								njRotateZ(0, (unsigned __int16)z);
+							Angle x = pObject->ang[0];
+							if (x)
+								njRotateX(0, (unsigned __int16)x);
+							Angle y = pObject->ang[1];
+							if (y)
+								njRotateY(0, (unsigned __int16)y);
+						}
+					}
+					//PrintDebug("Flags: %X\n", MobileEntry[c].slAttribute);
 					late_DrawObjectClip(MobileEntry[c].pObject, LATE_MAT, MobileEntry[c].pTask->twp->scl.x);
 					njPopMatrix(1u);
 					RestoreConstantAttr();
