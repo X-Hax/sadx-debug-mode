@@ -534,7 +534,7 @@ extern "C"
 		if (ControllerPointers[0]->PressedButtons & Buttons_C || KeyboardKeys[KEY_C].pressed)
 		{
 			CollisionDebug++;
-			if (CollisionDebug > 3)
+			if (CollisionDebug > 1)
 				CollisionDebug = 0;
 			switch (CollisionDebug)
 			{
@@ -718,6 +718,7 @@ extern "C"
 		// Display data
 		if (!MissedFrames)
 		{
+			/*
 			// Display dynamic collision
 			if (CollisionDebug >= 2)
 			{
@@ -790,7 +791,7 @@ extern "C"
 					RestoreConstantAttr();
 					njControl3D_Restore();
 				}
-			}
+			}*/
 			if (CrashDebug)
 			{
 				SetDebugFontColor(0xFFFF0000);
