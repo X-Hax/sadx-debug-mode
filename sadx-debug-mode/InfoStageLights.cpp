@@ -7,6 +7,8 @@ DataArray(LE_LIGHT_ENV, le_env, 0x3ABD9F8, 4); // Current stage lights
 
 bool IsStageLightValid(int id)
 {
+	if (id == 0)
+		return true;
 	if (le_env[id].stgNo != CurrentLevel || le_env[id].actNo != CurrentAct)
 		return false;
 	return true;
@@ -15,7 +17,14 @@ bool IsStageLightValid(int id)
 void StageLightInfo()
 {
 	if (!IsStageLightValid(CurrentStageLight))
-		CurrentStageLight = 0;
+	{
+		do
+		{
+			CurrentStageLight++;
+			if (CurrentStageLight > 3)
+				CurrentStageLight = 0;
+		} while (!IsStageLightValid(CurrentStageLight));
+	}
 	NJS_COLOR AmbColor = { 0 };
 	ScaleDebugFont(16);
 	DrawDebugRectangle(1.75f, 0.75f, 29, 22.5f);
