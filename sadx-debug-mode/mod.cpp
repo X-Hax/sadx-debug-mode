@@ -678,6 +678,8 @@ extern "C"
 		if (KeyboardKeys[KEY_END].pressed)
 		{
 			SpeedHack = !SpeedHack;
+			// Disable voices during the speed hack
+			VoicesEnabled = !SpeedHack;
 			SendDebugMessage(SpeedHack ? "SPEED HACK: ON" : "SPEED HACK: OFF");
 			if (!SpeedHack && FrameIncrementCurrent != 1)
 			{
