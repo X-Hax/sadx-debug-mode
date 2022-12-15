@@ -81,6 +81,7 @@
   <ItemGroup>
     <ClCompile Include="FreeCam.cpp" />
     <ClCompile Include="FreeMovement.cpp" />
+    <ClCompile Include="InfoCollision.cpp" />
     <ClCompile Include="InfoLanternPL.cpp" />
     <ClCompile Include="InfoLSPalette.cpp" />
     <ClCompile Include="InfoSound.cpp" />
@@ -92,6 +93,7 @@
     <ClInclude Include="Data.h" />
     <ClInclude Include="FreeCam.h" />
     <ClInclude Include="FreeMovement.h" />
+    <ClInclude Include="InfoCollision.h" />
     <ClInclude Include="InfoSound.h" />
     <ClInclude Include="Keys.h" />
     <ClInclude Include="Lantern.h" />
