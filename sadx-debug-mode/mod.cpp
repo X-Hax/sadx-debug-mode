@@ -1,3 +1,5 @@
+// TODO: Rewrite with symbol names, fix XP crash with LoadPVM hook
+
 #include <SADXModLoader.h>
 #include "IniFile.hpp"
 #include "Trampoline.h"

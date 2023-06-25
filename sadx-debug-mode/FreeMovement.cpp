@@ -27,8 +27,7 @@ void __cdecl Tails_Main_r(ObjectMaster* obj) {
 	{
 		Debug_FreeMovement(data);
 	}
-
-	ObjectFunc(original, Tails_Main_t->Target());
+	const auto original = TARGET_DYNAMIC(Tails_Main);
 	original(obj);
 
 	SetFreeMovement(data);
@@ -42,7 +41,7 @@ void Gamma_Main_r(ObjectMaster* obj) {
 		Debug_FreeMovement(data);
 	}
 
-	ObjectFunc(original, Gamma_Main_t->Target());
+	const auto original = TARGET_DYNAMIC(Gamma_Main);	
 	original(obj);
 
 	SetFreeMovement(data);
@@ -56,7 +55,7 @@ void __cdecl Big_Main_r(ObjectMaster* obj) {
 		Debug_FreeMovement(data);
 	}
 
-	ObjectFunc(original, Big_Main_t->Target());
+	const auto original = TARGET_DYNAMIC(Big_Main);
 	original(obj);
 
 	SetFreeMovement(data);
@@ -67,5 +66,4 @@ void InitFreeMovement()
 	Tails_Main_t = new Trampoline((int)Tails_Main, (int)Tails_Main + 0x7, Tails_Main_r);
 	Gamma_Main_t = new Trampoline((int)Gamma_Main, (int)Gamma_Main + 0x7, Gamma_Main_r);
 	Big_Main_t = new Trampoline((int)Big_Main, (int)Big_Main + 0x5, Big_Main_r);
-	return;
 }
